@@ -14,7 +14,8 @@ object PhoneAndroidShell {
     data class Request(val command: String, val timeoutMs: Long)
 
     fun parse(args: Args): Request? {
-        if (!args.onlyKeys("command", "timeout_ms")) return null
+        // The model sometimes adds backend or other keys. Those are ignored:
+        // the App settings choose the backend, and extra keys must not reject the call.
         val command = args.strictText("command") ?: return null
         if (!validCommand(command)) return null
         val timeout = if (args.provided("timeout_ms")) args.strictInt("timeout_ms")?.toLong() ?: return null

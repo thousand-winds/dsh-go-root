@@ -88,12 +88,15 @@ class PhoneAndroidShellTest {
         assertEquals(60_000L, checkNotNull(parse("id", mapOf("timeout_ms" to 60_000L))).timeoutMs)
     }
 
-    @Test fun commandRequiresARealNonblankStringAndOnlyDocumentedKeys() {
+    @Test fun commandRequiresARealNonblankStringAndIgnoresUnknownKeys() {
         for (command in listOf(null, true, 1, 1L, listOf("id"), "", " \t\r\n"))
             assertNull("must reject command=$command", parse(command))
         assertNull(PhoneAndroidShell.parse(Args(emptyMap())))
-        for (key in listOf("backend", "uid", "background", "screen", "max_output_bytes", "confirm"))
-            assertNull("must reject extra key $key", parse("id", mapOf(key to null)))
+        for (key in listOf("backend", "uid", "background", "screen", "max_output_bytes", "confirm")) {
+            val request = checkNotNull(parse("id", mapOf(key to "ignored")))
+            assertEquals("id", request.command)
+            assertEquals(PhoneAndroidShell.DEFAULT_TIMEOUT_MS, request.timeoutMs)
+        }
     }
 
     @Test fun timeoutRequiresAnActualIntegerWithinTheInclusiveRange() {
@@ -120,15 +123,44 @@ class PhoneAndroidShellTest {
         assertNotNull(parse("printf a\t\r\nprintf b\n"))
     }
 
-    @Test fun invalidArgumentsNeverReachBackendOrConfirmation() {
+    @Test fun invalidTimeoutStillNeverReachesBackendOrConfirmation() {
         Fixture().use { f ->
-            for (extra in listOf(mapOf("timeout_ms" to "100"), mapOf("timeout_ms" to null), mapOf("uid" to 0))) {
+            for (extra in listOf(mapOf("timeout_ms" to "100"), mapOf("timeout_ms" to null))) {
                 val out = f.call(extra = extra)
                 assertTrue(out.isError)
                 assertEquals("invalidArguments", (Json.parse(out.text) as Map<*, *>)["errorCode"])
+                assertNull((Json.parse(out.text) as Map<*, *>)["backend"])
             }
             assertEquals(0, f.executorCalls)
             assertTrue(f.asks.isEmpty())
+        }
+    }
+
+    @Test fun extraKeysIncludingBackendAreIgnoredAndSettingsBackendIsUsed() {
+        val parsed = parse("id", mapOf("backend" to "root", "uid" to 0))
+        assertNotNull(parsed)
+        assertEquals("id", parsed!!.command)
+        assertEquals(PhoneAndroidShell.DEFAULT_TIMEOUT_MS, parsed.timeoutMs)
+        Fixture().use { f ->
+            f.backend = "shizuku"
+            f.uid = 2000
+            val out = f.call("id", mapOf("backend" to "root"))
+            assertFalse(out.isError)
+            assertEquals("id", f.capturedCommand)
+            val ask = f.asks.single()
+            assertTrue(ask.sentence.contains("shizuku"))
+            assertTrue(ask.sentence.contains("2000"))
+            assertFalse(ask.sentence.contains("backend"))
+        }
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 0
+            f.rootSkip = true
+            val out = f.call("id", mapOf("backend" to "adb"))
+            assertFalse(out.isError)
+            assertTrue(f.asks.isEmpty())
+            assertEquals(1, f.dispatches)
+            assertEquals("id", f.capturedCommand)
         }
     }
 
