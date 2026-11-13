@@ -154,6 +154,28 @@ class PhoneAndroidShellTest {
         }
     }
 
+    @Test fun rootPromptShowsUidZeroCommandAndRefusesShellUid() {
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 0
+            val command = "id -u"
+            assertFalse(f.call(command).isError)
+            val ask = f.asks.single()
+            assertTrue(ask.sentence.contains("root"))
+            assertTrue(ask.sentence.contains("UID 0"))
+            assertTrue(ask.sentence.endsWith(command))
+            assertFalse(ask.offerTaskWaiver)
+            assertEquals(1, f.dispatches)
+        }
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 2000
+            assertTrue(f.call("id").isError)
+            assertTrue(f.asks.isEmpty())
+            assertEquals(0, f.dispatches)
+        }
+    }
+
     @Test fun onlyAllowOnceCanAuthorizeAShellCommand() {
         for (decision in Decision.entries) Fixture().use { f ->
             f.decision = decision
@@ -223,11 +245,12 @@ class PhoneAndroidShellTest {
     }
 
     @Test fun backendAndActualUidMustBeRecognizedBeforeAsking() {
-        for ((backend, uid) in listOf("adb" to 2000, "shizuku" to 0, "shizuku" to 2000,
-                "adb" to 0, "adb" to 10000, "shizuku" to -1, "unknown" to 0)) Fixture().use { f ->
+        for ((backend, uid) in listOf("adb" to 2000, "shizuku" to 0, "shizuku" to 2000, "root" to 0,
+                "adb" to 0, "adb" to 10000, "shizuku" to -1, "unknown" to 0, "root" to 2000, "root" to -1)) Fixture().use { f ->
             f.backend = backend
             f.uid = uid
-            val valid = (backend == "adb" && uid == 2000) || (backend == "shizuku" && uid in setOf(0, 2000))
+            val valid = (backend == "adb" && uid == 2000) || (backend == "shizuku" && uid in setOf(0, 2000)) ||
+                (backend == "root" && uid == 0)
             assertEquals(!valid, f.call().isError)
             assertEquals(if (valid) 1 else 0, f.asks.size)
             assertEquals(if (valid) 1 else 0, f.dispatches)

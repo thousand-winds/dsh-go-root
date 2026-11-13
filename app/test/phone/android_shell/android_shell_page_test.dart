@@ -347,6 +347,41 @@ void main() {
     expect(find.text(appL10n.androidShellErrorNativeUnavailable), findsWidgets);
   });
 
+  testWidgets('Root needs its own notice and an explicit connect before su', (tester) async {
+    final native = await _pump(tester);
+    await _tap(tester, 'android-shell-backend-root');
+    final choose = tester.widget<RiskNoticeSheet>(find.byType(RiskNoticeSheet)).notice;
+    expect(choose.id, 'phone.android-shell.root');
+    expect(choose.level, RiskLevel.high);
+    expect(choose.title, appL10n.androidShellRootRiskTitle);
+    expect(choose.body, appL10n.androidShellRootRiskBody);
+    expect(find.byKey(const ValueKey('risk-silence')), findsNothing);
+    expect(native.callsOf('configureAndroidShell'), isEmpty);
+    expect(native.callsOf('androidShellConnect'), isEmpty);
+    await tester.tap(find.descendant(of: find.byType(SheetHeader), matching: find.byType(SheetIconButton)));
+    await tester.pumpAndSettle();
+    expect(native.callsOf('configureAndroidShell'), isEmpty);
+    await _tap(tester, 'android-shell-backend-root');
+    await _tap(tester, 'risk-confirm');
+    expect(native.callsOf('configureAndroidShell').single.arguments, {'enabled': false, 'backend': 'root'});
+    expect(native.callsOf('androidShellConnect'), isEmpty);
+    expect(find.byKey(const ValueKey('android-shell-authorize')), findsNothing);
+    expect(find.byKey(const ValueKey('android-shell-pair')), findsNothing);
+    expect(tester.widget<ListPageRow>(find.byKey(const ValueKey('android-shell-connect-root'))).onTap, isNull);
+    native.status = shellStatus(enabled: true, backend: 'root', reasonCode: 'notConnected');
+    await tester.tap(find.text(appL10n.androidShellRefresh));
+    await tester.pumpAndSettle();
+    await _tap(tester, 'android-shell-connect-root');
+    expect(native.callsOf('androidShellConnect'), hasLength(1));
+    expect(native.callsOf('androidShellConnect').single.arguments, isEmpty);
+    expect(native.callsOf('androidShellRequestPermission'), isEmpty);
+    expect(native.callsOf('androidShellPair'), isEmpty);
+    await openPhoneFold(tester, 'android-shell-details');
+    expect(find.text(appL10n.androidShellRootHint), findsOneWidget);
+    expect(find.text(appL10n.androidShellAdbHint), findsNothing);
+    expect(find.text(appL10n.androidShellShizukuHint), findsNothing);
+  });
+
   test('stable errors are friendly in both languages and unknown codes fail safely', () {
     for (final locale in [AppLocale.zhCN, AppLocale.en]) {
       final l10n = lookupL10n(locale);

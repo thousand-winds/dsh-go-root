@@ -1709,7 +1709,7 @@ class L10nEn extends L10n {
 
   @override
   String get androidShellSubtitle =>
-      'Run Android system commands on this phone through Shizuku or self-ADB, not bash inside Ubuntu.';
+      'Run Android system commands on this phone through Shizuku, self-ADB, or Root (KernelSU / su), not bash inside Ubuntu.';
 
   @override
   String get androidShellEnable => 'Allow Android Shell';
@@ -1754,6 +1754,29 @@ class L10nEn extends L10n {
   @override
   String get androidShellAdbHint =>
       'Connect to this phone\'s wireless debugging with the app\'s private ADB identity. Other devices are not contacted.';
+
+  @override
+  String get androidShellRoot => 'Root (KernelSU / su)';
+
+  @override
+  String get androidShellRootHint =>
+      'Starts an independent shell with su from KernelSU, Magisk, or APatch. Child /system/bin/sh jobs run as UID 0. This is off until you choose Root, read the high-risk notice, turn the switch on, and tap Connect. The first su can wait on the KernelSU grant for about 30 seconds. After connect, the real UID is checked and anything other than 0 is refused. The su process may stay up so KernelSU is not prompted on every command; each command still needs an in-app confirmation that shows the full command and the identity root, UID 0. Screen-control waivers do not apply. There is no automatic retry and no fallback to ADB or Shizuku, and su is never started from Ubuntu. This install is a new app and needs its own KernelSU grant.';
+
+  @override
+  String get androidShellRootRiskTitle => 'Allow system commands through su as root?';
+
+  @override
+  String get androidShellRootRiskBody =>
+      'This starts an Android shell as UID 0 with su from KernelSU, Magisk, or APatch. Commands can change the system and app data. It stays off until you choose Root, turn the switch on, and tap Connect. If the connected UID is not 0, commands are refused. Every command still asks for confirmation and shows the full command with the identity root, UID 0. Screen-control waivers, including allow-for-this-task and always-allow, do not apply. A failure is not retried and is not silently sent through ADB or Shizuku.';
+
+  @override
+  String get androidShellRootRiskAction => 'I understand, use Root';
+
+  @override
+  String get androidShellRootConnect => 'Connect Root (su)';
+
+  @override
+  String get androidShellRootConnected => 'Root shell connected';
 
   @override
   String get androidShellInstalled => 'Shizuku installed';

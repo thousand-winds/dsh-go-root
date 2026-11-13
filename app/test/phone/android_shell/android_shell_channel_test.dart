@@ -28,7 +28,16 @@ void main() {
     expect(status.shizuku.granted, isFalse);
     expect(status.adb.paired, isTrue);
     expect(status.adb.connected, isTrue);
+    expect(status.root.connected, isFalse);
     expect(status.limits['maxCommandBytes'], 2048);
+    final root = AndroidShellStatus.fromMap({
+      ...shellStatus(enabled: true, backend: 'root', ready: true, uid: 0, reasonCode: null),
+      'root': {'connected': true},
+    });
+    expect(root.supported, isTrue);
+    expect(root.backend, AndroidShellBackend.root);
+    expect(root.uid, 0);
+    expect(root.root.connected, isTrue);
   });
 
   test('absent, malformed or unknown protocols fail closed without fallback', () {
@@ -36,7 +45,7 @@ void main() {
       {},
       {...shellStatus(), 'v': 2},
       {...shellStatus(), 'v': 1.0},
-      {...shellStatus(), 'backend': 'root'},
+      {...shellStatus(), 'backend': 'sudo'},
       {...shellStatus(), 'enabled': 1},
       {...shellStatus(), 'ready': 'yes'},
     ]) {

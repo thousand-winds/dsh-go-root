@@ -8,6 +8,16 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 class RootBackendTest {
+    @Test fun shellHostIsSuAndNotTheDisplayEntry() {
+        val argv = RootCommands.shellHost("/data/app/base.apk", listOf("/data/app/split.apk"))
+        assertEquals(3, argv.size)
+        assertEquals(listOf("su", "-c"), argv.take(2))
+        assertEquals(
+            "CLASSPATH='/data/app/base.apk:/data/app/split.apk' exec /system/bin/app_process /system/bin io.github.ccch1mneyyy.dsh_app.phone.shell.ShellRootMain",
+            argv[2],
+        )
+        assertFalse(argv[2].contains("PrivilegedDisplayMain"))
+    }
     @Test fun commandHasOneShellArgumentAndFixedEntrypoint() {
         val argv = RootCommands.appProcess("/data/app/base.apk", listOf("/data/app/split.apk"))
         assertEquals(3, argv.size)

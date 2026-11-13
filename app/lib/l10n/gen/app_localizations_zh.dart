@@ -1628,7 +1628,7 @@ class L10nZh extends L10n {
   String get androidShellEntryHint => '独立的系统命令通道，默认关闭';
 
   @override
-  String get androidShellSubtitle => '通过 Shizuku 或自连 ADB 在这台手机上执行 Android 系统命令，不是 Ubuntu 里的 bash。';
+  String get androidShellSubtitle => '通过 Shizuku、自连 ADB 或 Root（KernelSU / su）在这台手机上执行 Android 系统命令，不是 Ubuntu 里的 bash。';
 
   @override
   String get androidShellEnable => '允许 Android Shell';
@@ -1668,6 +1668,29 @@ class L10nZh extends L10n {
 
   @override
   String get androidShellAdbHint => '连接本机的无线调试，复用 App 的私有 ADB 身份；不会连接其他设备。';
+
+  @override
+  String get androidShellRoot => 'Root（KernelSU / su）';
+
+  @override
+  String get androidShellRootHint =>
+      '用 KernelSU、Magisk 或 APatch 的 su 启动独立 shell，子进程以 UID 0 运行 /system/bin/sh。默认关闭。先选择本方式并阅读高风险提示，再打开开关，然后点连接才会调用 su。首次连接可能停在 KernelSU 授权界面，大约等待 30 秒。连接后核对真实 UID，不是 0 就拒绝执行。su 进程可以保持，避免每条命令都弹出授权；应用内仍逐条确认，卡片显示完整命令和身份 root、UID 0。屏幕操控的免确认不适用。不会自动重试，也不会改走 ADB 或 Shizuku，更不会从 Ubuntu 里调用 su。这个安装包是新应用，需要在 KernelSU 里重新授权。';
+
+  @override
+  String get androidShellRootRiskTitle => '允许通过 su 以 root 执行系统命令？';
+
+  @override
+  String get androidShellRootRiskBody =>
+      '这会用 KernelSU、Magisk 或 APatch 的 su 启动 UID 0 的 Android shell，命令可以修改系统和应用数据。它默认关闭。选择 Root 后，还要打开开关并点连接，才会第一次调用 su。连接后如果真实 UID 不是 0，命令会被拒绝。每条命令仍单独确认，确认卡显示完整命令和身份 root、UID 0。屏幕操控的「本任务免确认」和「始终免确认」不适用。失败后不会自动重试，也不会静默改用 ADB 或 Shizuku。';
+
+  @override
+  String get androidShellRootRiskAction => '我已了解，使用 Root';
+
+  @override
+  String get androidShellRootConnect => '连接 Root（su）';
+
+  @override
+  String get androidShellRootConnected => 'Root shell 已连接';
 
   @override
   String get androidShellInstalled => 'Shizuku 已安装';
