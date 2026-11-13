@@ -1052,6 +1052,7 @@
   },
   "androidShellErrorDisabled": "Android Shell 已关闭。",
   "androidShellErrorNotConnected": "所选通道尚未连接。",
+  "androidShellErrorSuUnavailable": "KernelSU 的 su 不可用。等 KernelSU 恢复后再连接；现在并没有连上。",
   "androidShellErrorShizukuMissing": "请先安装 Shizuku。",
   "androidShellErrorShizukuStopped": "请先启动 Shizuku，再刷新状态。",
   "androidShellErrorPermissionRequired": "需要你在 Shizuku 中明确授权。",

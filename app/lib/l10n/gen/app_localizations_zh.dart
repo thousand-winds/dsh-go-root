@@ -1801,6 +1801,9 @@ class L10nZh extends L10n {
   String get androidShellErrorNotConnected => '所选通道尚未连接。';
 
   @override
+  String get androidShellErrorSuUnavailable => 'KernelSU 的 su 不可用。等 KernelSU 恢复后再连接；现在并没有连上。';
+
+  @override
   String get androidShellErrorShizukuMissing => '请先安装 Shizuku。';
 
   @override

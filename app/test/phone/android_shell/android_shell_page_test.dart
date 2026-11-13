@@ -383,6 +383,35 @@ void main() {
     expect(find.text(appL10n.androidShellShizukuHint), findsNothing);
   });
 
+  testWidgets('a dead Root host is not labeled connected', (tester) async {
+    await _pump(
+      tester,
+      native: ShellNative(
+        status: {
+          ...shellStatus(enabled: true, backend: 'root', ready: true, uid: 0, reasonCode: null),
+          'root': {'connected': false},
+        },
+      ),
+    );
+    expect(find.text(appL10n.androidShellReady), findsNothing);
+    expect(find.text(appL10n.androidShellErrorNotConnected), findsWidgets);
+    expect(find.text(appL10n.androidShellRootConnected), findsNothing);
+  });
+
+  testWidgets('su unavailable stays disconnected', (tester) async {
+    await _pump(
+      tester,
+      native: ShellNative(
+        status: {
+          ...shellStatus(enabled: true, backend: 'root', ready: false, reasonCode: 'suUnavailable'),
+          'root': {'connected': false},
+        },
+      ),
+    );
+    expect(find.text(appL10n.androidShellErrorSuUnavailable), findsWidgets);
+    expect(find.text(appL10n.androidShellReady), findsNothing);
+  });
+
   testWidgets('Root skip confirmation is opt-in and leaves other backends alone', (tester) async {
     final native = await _pump(
       tester,
@@ -439,6 +468,7 @@ void main() {
         'nativeUnavailable',
         'invalidResponse',
         'stopFailed',
+        'suUnavailable',
       ]) {
         expect(androidShellErrorText(l10n, code), isNot(l10n.androidShellErrorUnknown));
       }

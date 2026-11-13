@@ -77,6 +77,7 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
         promptOwner = Any()
         attached = true
         control.background.restoreKeptChannel()
+        io.execute { runCatching { control.shell.ensureRoot() } }
         methods = MethodChannel(binding.binaryMessenger, "dsh/phone").also { it.setMethodCallHandler(this) }
         events = EventChannel(binding.binaryMessenger, "dsh/phone/events").also { it.setStreamHandler(this) }
         previewEvents = EventChannel(binding.binaryMessenger, "dsh/phone/preview").also { channel ->
@@ -190,7 +191,7 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "status" -> control.status { complete(result, it) }
-            "androidShellStatus" -> async(result, shortControl = true) { control.shell.status() }
+            "androidShellStatus" -> async(result, shortControl = true) { control.shell.ensureRoot() }
             "configureAndroidShell" -> {
                 val args = call.arguments as? Map<*, *>
                 val enabled = args?.get("enabled") as? Boolean

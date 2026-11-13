@@ -1893,6 +1893,10 @@ class L10nEn extends L10n {
   String get androidShellErrorNotConnected => 'The selected channel is not connected.';
 
   @override
+  String get androidShellErrorSuUnavailable =>
+      'KernelSU su is not available. Reconnect after KernelSU is active. The shell is not connected.';
+
+  @override
   String get androidShellErrorShizukuMissing => 'Install Shizuku first.';
 
   @override

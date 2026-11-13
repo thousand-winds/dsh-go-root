@@ -2,6 +2,16 @@
 
 每个版本先中文、后英文。发版时把对应版本的正文（不含版本标题）作为 Release 正文，见 `docs/release.md`。
 
+## 1.0.18 · 2026-11-13
+
+### 中文
+
+- **Root Android Shell 在已开启后会自动重连。** 只要设置里 Android Shell 开着且后端是 Root，App 启动或命令发现 su 进程不在时会再连一次，并核对 UID 0。不必每次重启后再点「连接 Root（su）」。KernelSU 本身没在运行时显示未连接和「su 不可用」，不会把旧的「已连接」留在界面上。
+
+### English
+
+- **Root Android Shell reconnects after it was enabled.** If Android Shell stays on with the Root backend, the app starts su again at launch and when a command finds the host gone, then checks that the UID is 0. You do not have to tap Connect Root (su) after every reboot. If KernelSU itself is not running, the page shows disconnected and that su is unavailable, instead of a stale connected label.
+
 ## 1.0.17 · 2026-11-13
 
 ### 中文

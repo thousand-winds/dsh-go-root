@@ -36,6 +36,7 @@ String androidShellErrorText(L10n l10n, String code) => switch (code) {
   'nativeUnavailable' => l10n.androidShellErrorNativeUnavailable,
   'invalidResponse' => l10n.androidShellErrorInvalidResponse,
   'stopFailed' => l10n.androidShellErrorStopFailed,
+  'suUnavailable' => l10n.androidShellErrorSuUnavailable,
   _ => l10n.androidShellErrorUnknown,
 };
 
@@ -212,6 +213,9 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
     final shizuku = _status.backend == AndroidShellBackend.shizuku;
     final root = _status.backend == AndroidShellBackend.root;
     final adb = _status.backend == AndroidShellBackend.adb;
+    // A dead su host must not keep the "connected" label from an earlier session.
+    final rootUp = !root || _status.root.connected;
+    final showReady = _status.ready && rootUp;
     final authorize = ListPageRow(
       key: const ValueKey('android-shell-authorize'),
       title: l10n.androidShellAuthorize,
@@ -270,7 +274,7 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
                   ? androidShellErrorText(l10n, reasonCode)
                   : !_status.enabled
                   ? l10n.androidShellErrorDisabled
-                  : _status.ready
+                  : showReady
                   ? l10n.androidShellReady
                   : l10n.androidShellErrorNotConnected,
               subtitleMaxLines: 6,

@@ -553,6 +553,7 @@
   "androidShellLimits": "Up to {seconds} seconds and {bytes} output bytes per command",
   "androidShellErrorDisabled": "Android Shell is off.",
   "androidShellErrorNotConnected": "The selected channel is not connected.",
+  "androidShellErrorSuUnavailable": "KernelSU su is not available. Reconnect after KernelSU is active. The shell is not connected.",
   "androidShellErrorShizukuMissing": "Install Shizuku first.",
   "androidShellErrorShizukuStopped": "Start Shizuku, then refresh the status.",
   "androidShellErrorPermissionRequired": "Explicit authorization in Shizuku is required.",

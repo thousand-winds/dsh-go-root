@@ -54,7 +54,8 @@ internal class ShellRootBackend(
             val child = try {
                 spawn(command)
             } catch (_: Exception) {
-                return ShellConnection(errorCode = "connectFailed")
+                // su is not on PATH, or KernelSU is not running. Do not pretend the host connected.
+                return ShellConnection(errorCode = "suUnavailable")
             }
             started = child
             synchronized(guard) {
@@ -62,14 +63,16 @@ internal class ShellRootBackend(
                 process = child
             }
             drain(child)
-            awaitMagic(child, ::current)?.let { return ShellConnection(errorCode = it) }
+            awaitMagic(child, ::current)?.let { code ->
+                return ShellConnection(errorCode = if (code == "connectFailed") "suUnavailable" else code)
+            }
             if (!current()) return ShellConnection(errorCode = "cancelled")
             val link = linkFor(child)
             candidate = link
             val probed = try {
                 link.probe()
             } catch (_: Exception) {
-                return ShellConnection(errorCode = "connectFailed")
+                return ShellConnection(errorCode = "suUnavailable")
             }
             // The host must actually be UID 0. A shell-uid su is not this backend.
             if (!probed || link.uid != 0) return ShellConnection(errorCode = "identityChanged")

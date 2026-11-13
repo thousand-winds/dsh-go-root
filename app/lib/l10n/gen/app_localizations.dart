@@ -3410,6 +3410,12 @@ abstract class L10n {
   /// **'所选通道尚未连接。'**
   String get androidShellErrorNotConnected;
 
+  /// No description provided for @androidShellErrorSuUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'KernelSU 的 su 不可用。等 KernelSU 恢复后再连接；现在并没有连上。'**
+  String get androidShellErrorSuUnavailable;
+
   /// No description provided for @androidShellErrorShizukuMissing.
   ///
   /// In zh, this message translates to:
