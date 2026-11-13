@@ -3206,6 +3206,42 @@ abstract class L10n {
   /// **'Root shell 已连接'**
   String get androidShellRootConnected;
 
+  /// No description provided for @androidShellRootSkip.
+  ///
+  /// In zh, this message translates to:
+  /// **'始终免确认'**
+  String get androidShellRootSkip;
+
+  /// No description provided for @androidShellRootSkipHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'只作用于 Root（KernelSU / su）。打开后，已连接且 UID 为 0 的命令不再弹出确认卡。ADB 和 Shizuku 仍逐条确认。屏幕操控的免确认仍然不适用。'**
+  String get androidShellRootSkipHint;
+
+  /// No description provided for @androidShellRootSkipOnNote.
+  ///
+  /// In zh, this message translates to:
+  /// **'Root 的始终免确认已打开：UID 0 的命令直接执行。ADB 和 Shizuku 仍逐条确认。'**
+  String get androidShellRootSkipOnNote;
+
+  /// No description provided for @androidShellRootSkipRiskTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许 Root 命令不再确认？'**
+  String get androidShellRootSkipRiskTitle;
+
+  /// No description provided for @androidShellRootSkipRiskBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'Root 可以修改系统和应用数据。打开后，已连接且真实 UID 为 0 的 Root 通道会直接执行命令，不再显示确认卡。必须仍然开启 Android Shell 并保持 Root 已连接。关闭后立刻恢复逐条确认。'**
+  String get androidShellRootSkipRiskBody;
+
+  /// No description provided for @androidShellRootSkipRiskAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'始终免确认'**
+  String get androidShellRootSkipRiskAction;
+
   /// No description provided for @androidShellInstalled.
   ///
   /// In zh, this message translates to:

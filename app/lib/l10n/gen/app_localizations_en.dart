@@ -1779,6 +1779,27 @@ class L10nEn extends L10n {
   String get androidShellRootConnected => 'Root shell connected';
 
   @override
+  String get androidShellRootSkip => 'Always skip confirmation';
+
+  @override
+  String get androidShellRootSkipHint =>
+      'Root (KernelSU / su) only. While this is on, commands on a connected UID 0 channel run without a confirmation card. ADB and Shizuku still confirm every command. Screen-control waivers still do not apply.';
+
+  @override
+  String get androidShellRootSkipOnNote =>
+      'Always skip confirmation is on for Root: UID 0 commands run directly. ADB and Shizuku still confirm every command.';
+
+  @override
+  String get androidShellRootSkipRiskTitle => 'Allow Root commands without confirmation?';
+
+  @override
+  String get androidShellRootSkipRiskBody =>
+      'Root can change the system and app data. While this is on, a connected Root channel whose real UID is 0 runs commands without a confirmation card. Android Shell must stay enabled and Root must stay connected. Turning this off immediately restores per-command confirmation.';
+
+  @override
+  String get androidShellRootSkipRiskAction => 'Always skip confirmation';
+
+  @override
   String get androidShellInstalled => 'Shizuku installed';
 
   @override

@@ -2,6 +2,18 @@
 
 每个版本先中文、后英文。发版时把对应版本的正文（不含版本标题）作为 Release 正文，见 `docs/release.md`。
 
+## 1.0.17 · 2026-11-13
+
+### 中文
+
+- **Android Shell 增加 Root（KernelSU / su）通道。** 包名是 `io.github.thousandwinds.dshgo`，可与官方 DSH Go 同时安装。需要真实 Android root 时用 `android_shell` 的 Root 后端；Ubuntu/proot 里的 uid=0 不是真实 root。
+- **Root 可以单独打开「始终免确认」。** 默认关闭。打开前要确认高风险说明；关闭后立刻恢复逐条确认。ADB 和 Shizuku 仍逐条确认。屏幕操控的免确认不适用。
+
+### English
+
+- **Android Shell gains a Root (KernelSU / su) channel.** The package id is `io.github.thousandwinds.dshgo`, so it installs beside official DSH Go. Real Android root uses the Root `android_shell` backend; uid 0 inside Ubuntu/proot is not real root.
+- **Root has its own Always skip confirmation switch.** It is off by default. Turning it on requires a high-risk confirmation, and turning it off immediately restores per-command confirmation. ADB and Shizuku still confirm every command. Screen-control waivers do not apply.
+
 ## 1.0.16 · 2026-11-13
 
 ### 中文

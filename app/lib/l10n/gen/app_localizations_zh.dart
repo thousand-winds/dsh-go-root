@@ -1693,6 +1693,26 @@ class L10nZh extends L10n {
   String get androidShellRootConnected => 'Root shell 已连接';
 
   @override
+  String get androidShellRootSkip => '始终免确认';
+
+  @override
+  String get androidShellRootSkipHint =>
+      '只作用于 Root（KernelSU / su）。打开后，已连接且 UID 为 0 的命令不再弹出确认卡。ADB 和 Shizuku 仍逐条确认。屏幕操控的免确认仍然不适用。';
+
+  @override
+  String get androidShellRootSkipOnNote => 'Root 的始终免确认已打开：UID 0 的命令直接执行。ADB 和 Shizuku 仍逐条确认。';
+
+  @override
+  String get androidShellRootSkipRiskTitle => '允许 Root 命令不再确认？';
+
+  @override
+  String get androidShellRootSkipRiskBody =>
+      'Root 可以修改系统和应用数据。打开后，已连接且真实 UID 为 0 的 Root 通道会直接执行命令，不再显示确认卡。必须仍然开启 Android Shell 并保持 Root 已连接。关闭后立刻恢复逐条确认。';
+
+  @override
+  String get androidShellRootSkipRiskAction => '始终免确认';
+
+  @override
   String get androidShellInstalled => 'Shizuku 已安装';
 
   @override

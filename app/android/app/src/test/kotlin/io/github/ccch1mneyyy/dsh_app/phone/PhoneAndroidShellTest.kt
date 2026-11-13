@@ -16,6 +16,7 @@ class PhoneAndroidShellTest {
         var backendAvailable = true
         var backend = "shizuku"
         var uid = 2000
+        var rootSkip = false
         var policies = PhonePolicies()
         var decision = Decision.ALLOW_ONCE
         var beforeConfirm: () -> Unit = {}
@@ -49,6 +50,7 @@ class PhoneAndroidShellTest {
             override fun policies() = this@Fixture.policies
             override fun isLocked() = locked
             override fun androidShell() = executor.takeIf { backendAvailable }
+            override fun androidShellRootSkipConfirmation() = rootSkip
             override fun gate() = if (!gateAvailable) null else object : UserGate {
                 override fun confirm(request: ConfirmRequest): Decision {
                     asks += request
@@ -173,6 +175,45 @@ class PhoneAndroidShellTest {
             assertTrue(f.call("id").isError)
             assertTrue(f.asks.isEmpty())
             assertEquals(0, f.dispatches)
+        }
+    }
+
+    @Test fun rootSkipConfirmationSkipsOnlyConnectedUidZero() {
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 0
+            f.rootSkip = false
+            assertFalse(f.call("id -u").isError)
+            assertEquals(1, f.asks.size)
+        }
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 0
+            f.rootSkip = true
+            val command = "id -u"
+            assertFalse(f.call(command).isError)
+            assertTrue(f.asks.isEmpty())
+            assertEquals(1, f.dispatches)
+            assertEquals(command, f.capturedCommand)
+            f.rootSkip = false
+            assertFalse(f.call(command).isError)
+            assertEquals(1, f.asks.size)
+            assertEquals(2, f.dispatches)
+        }
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 2000
+            f.rootSkip = true
+            assertTrue(f.call("id").isError)
+            assertTrue(f.asks.isEmpty())
+            assertEquals(0, f.dispatches)
+        }
+        for (backend in listOf("adb", "shizuku")) Fixture().use { f ->
+            f.backend = backend
+            f.uid = if (backend == "adb") 2000 else 0
+            f.rootSkip = true
+            assertFalse(f.call("id").isError)
+            assertEquals(1, f.asks.size)
         }
     }
 

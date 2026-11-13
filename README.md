@@ -19,7 +19,7 @@ This fork stays private. Do not publish release builds as official DSH Go, and d
 
 ## Android Shell: Root
 
-Settings → Phone control → Android Shell. The Root backend is off until you choose **Root（KernelSU / su）**, read the high-risk notice, turn the switch on, and tap **Connect Root (su)**. That is the first time this app runs `su`. After connect it checks the real UID and refuses commands unless the UID is 0. Each command still asks for confirmation and shows the full command with the identity root, UID 0. Screen-control waivers do not apply. The `su` helper may stay running so KernelSU is not prompted on every command. There is no automatic retry and no fallback to ADB or Shizuku.
+Settings → Phone control → Android Shell. The Root backend is off until you choose **Root（KernelSU / su）**, read the high-risk notice, turn the switch on, and tap **Connect Root (su)**. That is the first time this app runs `su`. After connect it checks the real UID and refuses commands unless the UID is 0. Each command still asks for confirmation and shows the full command with the identity root, UID 0, until you turn on **始终免确认 / Always skip confirmation** on that same page. That switch is Root-only, off by default, and saved on the device. Screen-control waivers still do not apply. The `su` helper may stay running so KernelSU is not prompted on every command. There is no automatic retry and no fallback to ADB or Shizuku.
 
 ## Build note
 

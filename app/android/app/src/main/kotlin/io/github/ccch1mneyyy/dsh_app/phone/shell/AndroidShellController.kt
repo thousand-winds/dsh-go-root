@@ -13,6 +13,7 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
     private val guard = Any()
     private var enabled = preferences.getBoolean("enabled", false)
     private var backend = preferences.getString("backend", "shizuku").takeIf { it == "adb" || it == "shizuku" || it == "root" } ?: "shizuku"
+    private var rootSkip = preferences.getBoolean("rootSkipConfirmation", false)
     private var generation = 0L
     private var setupBusy = false
     private var active: Lease? = null
@@ -29,7 +30,7 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
     }
 
     fun status(): Map<String, Any?> {
-        val config = synchronized(guard) { enabled to backend }
+        val config = synchronized(guard) { Triple(enabled, backend, rootSkip) }
         val shizukuStatus = shizuku.status()
         val adbStatus = adb.status()
         val link = readyLink?.takeIf { it.backend == config.second && it.alive() &&
@@ -46,6 +47,7 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
         }
         return mapOf(
             "v" to 1, "enabled" to config.first, "backend" to config.second,
+            "rootSkipConfirmation" to config.third,
             "ready" to (config.first && link != null), "uid" to link?.uid,
             "reasonCode" to reason, "shizuku" to shizukuStatus, "adb" to adbStatus, "root" to root.status(),
             "limits" to mapOf("defaultTimeoutMs" to ShellProtocol.DEFAULT_TIMEOUT_MS,
@@ -66,6 +68,21 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
             }
         }
         if (changed) { adb.disconnect(); shizuku.disconnect(); root.disconnect(); onChanged() }
+        return status() + mapOf("ok" to true, "errorCode" to null)
+    }
+
+    /** Persisted Root-only waiver. Read on each command; it does not start su or touch ADB/Shizuku. */
+    fun rootSkipConfirmation(): Boolean = synchronized(guard) { rootSkip }
+
+    fun setRootSkipConfirmation(enabled: Boolean): Map<String, Any?> {
+        val changed = synchronized(guard) {
+            if (rootSkip == enabled) false else {
+                rootSkip = enabled
+                preferences.edit().putBoolean("rootSkipConfirmation", enabled).apply()
+                true
+            }
+        }
+        if (changed) onChanged()
         return status() + mapOf("ok" to true, "errorCode" to null)
     }
 

@@ -25,6 +25,8 @@ interface PhoneEnv {
     fun backgroundUnavailable(): String
     fun system(): SystemApi
     fun androidShell(): PhoneShellExecutor? = null
+    /** Root Android Shell only. Screen-control waivers never set this. */
+    fun androidShellRootSkipConfirmation(): Boolean = false
     fun uiText(): PhoneUiText = PhoneUiText.DEFAULT
     fun zone(): ZoneId
     /** Tells the person what to fix (accessibility off, …); at most once per task and kind. */
@@ -396,7 +398,7 @@ class PhoneCore(
         // Arbitrary system effects cannot become an implicitly verified UI replay route.
         skillTrace.markIncomplete(owner, PhoneTaskTrace.Gap.UNCERTAIN_RESULT)
         val result = PhoneAndroidShell.run(request, owner, tasks, scope, env.androidShell(),
-            env::enabled, env::isLocked, env::gate, ui)
+            env::enabled, env::isLocked, env::gate, ui, env::androidShellRootSkipConfirmation)
         val successfulExit = when (val code = result["exitCode"]) {
             is Int -> code == 0
             is Long -> code == 0L

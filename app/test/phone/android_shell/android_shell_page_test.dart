@@ -81,6 +81,7 @@ void main() {
     expect(find.text(appL10n.androidShellLimits(30, 65536)), findsNothing);
     expect(find.byKey(const ValueKey('android-shell-authorize')), findsNothing);
     expect(find.byKey(const ValueKey('android-shell-connect-shizuku')), findsNothing);
+    expect(find.byKey(const ValueKey('android-shell-root-skip')), findsNothing);
     expect(find.byKey(const ValueKey('android-shell-stop')).hitTestable(), findsOneWidget);
     await openPhoneFold(tester, 'android-shell-details');
     expect(find.text('2000'), findsOneWidget);
@@ -380,6 +381,37 @@ void main() {
     expect(find.text(appL10n.androidShellRootHint), findsOneWidget);
     expect(find.text(appL10n.androidShellAdbHint), findsNothing);
     expect(find.text(appL10n.androidShellShizukuHint), findsNothing);
+  });
+
+  testWidgets('Root skip confirmation is opt-in and leaves other backends alone', (tester) async {
+    final native = await _pump(
+      tester,
+      native: ShellNative(status: shellStatus(enabled: true, backend: 'root', ready: true, uid: 0, reasonCode: null)),
+    );
+    expect(find.text(appL10n.androidShellRootSkip), findsOneWidget);
+    expect(tester.widget<Switch>(find.byKey(const ValueKey('android-shell-root-skip-switch'))).value, isFalse);
+    await _tap(tester, 'android-shell-root-skip-switch');
+    final notice = tester.widget<RiskNoticeSheet>(find.byType(RiskNoticeSheet)).notice;
+    expect(notice.id, 'phone.android-shell.root-skip');
+    expect(notice.level, RiskLevel.high);
+    expect(notice.title, appL10n.androidShellRootSkipRiskTitle);
+    expect(find.byKey(const ValueKey('risk-silence')), findsNothing);
+    expect(native.callsOf('setAndroidShellRootSkip'), isEmpty);
+    await tester.tap(find.descendant(of: find.byType(SheetHeader), matching: find.byType(SheetIconButton)));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Switch>(find.byKey(const ValueKey('android-shell-root-skip-switch'))).value, isFalse);
+    await _tap(tester, 'android-shell-root-skip-switch');
+    await _tap(tester, 'risk-confirm');
+    expect(native.callsOf('setAndroidShellRootSkip').single.arguments, {'enabled': true});
+    expect(native.callsOf('androidShellConnect'), isEmpty);
+    expect(find.text(appL10n.androidShellRootSkipOnNote), findsOneWidget);
+    await _tap(tester, 'android-shell-root-skip-switch');
+    expect(find.byType(RiskNoticeSheet), findsNothing);
+    expect(native.callsOf('setAndroidShellRootSkip').last.arguments, {'enabled': false});
+    native.status = shellStatus(enabled: true, backend: 'adb', adbPaired: true, reasonCode: null);
+    await tester.tap(find.text(appL10n.androidShellRefresh));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('android-shell-root-skip')), findsNothing);
   });
 
   test('stable errors are friendly in both languages and unknown codes fail safely', () {

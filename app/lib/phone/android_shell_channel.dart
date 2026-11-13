@@ -60,6 +60,7 @@ class AndroidShellStatus {
     this.enabled = false,
     this.backend = AndroidShellBackend.shizuku,
     this.ready = false,
+    this.rootSkipConfirmation = false,
     this.uid,
     this.reasonCode,
     this.shizuku = const AndroidShellShizukuStatus(),
@@ -84,6 +85,7 @@ class AndroidShellStatus {
       enabled: value['enabled'] == true,
       backend: backend,
       ready: value['ready'] == true,
+      rootSkipConfirmation: value['rootSkipConfirmation'] == true,
       uid: _nonNegativeInt(value['uid']),
       reasonCode: _code(value['reasonCode']),
       shizuku: AndroidShellShizukuStatus.fromMap(_map(value['shizuku'])),
@@ -100,6 +102,7 @@ class AndroidShellStatus {
   final bool enabled;
   final AndroidShellBackend backend;
   final bool ready;
+  final bool rootSkipConfirmation;
   final int? uid;
   final String? reasonCode;
   final AndroidShellShizukuStatus shizuku;
@@ -160,6 +163,10 @@ class AndroidShellChannel {
   }
 
   Future<bool> stop() => _bool('androidShellStop');
+
+  /// Root Android Shell only. Does not connect or run a command.
+  Future<AndroidShellResult> setRootSkip(bool enabled) =>
+      _result('setAndroidShellRootSkip', {'enabled': enabled});
 
   bool _validPort(int? port) => port == null || (port >= 1 && port <= 65535);
 

@@ -138,6 +138,24 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
       _run(() async => AndroidShellResult(await _channel.requestPermission(), errorCode: 'permissionRequired'));
 
   /// Choosing Root is a separate high-risk step. It does not start su.
+  Future<void> _setRootSkip(bool enabled) => _run(() async {
+    if (enabled) {
+      final l10n = context.l10n;
+      final accepted = await confirmRisk(
+        context,
+        RiskNotice(
+          id: 'phone.android-shell.root-skip',
+          level: RiskLevel.high,
+          title: l10n.androidShellRootSkipRiskTitle,
+          body: l10n.androidShellRootSkipRiskBody,
+          action: l10n.androidShellRootSkipRiskAction,
+        ),
+      );
+      if (!accepted || !mounted) return const AndroidShellResult(true);
+    }
+    return _channel.setRootSkip(enabled);
+  });
+
   Future<void> _selectBackend(AndroidShellBackend backend) => _run(() async {
     if (backend == AndroidShellBackend.root) {
       final accepted = await confirmRisk(
@@ -222,7 +240,12 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
     return AppPage.list(
       title: l10n.androidShellTitle,
       children: [
-        PhoneNote(tone: NoteTone.warn, text: l10n.androidShellConfirmationNote),
+        PhoneNote(
+          tone: NoteTone.warn,
+          text: root && _status.rootSkipConfirmation
+              ? l10n.androidShellRootSkipOnNote
+              : l10n.androidShellConfirmationNote,
+        ),
         if (!phone.status.enabled) PhoneNote(text: l10n.androidShellMasterOff),
         ListPageCard(
           margin: _margin,
@@ -282,6 +305,24 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
               ),
           ],
         ),
+        if (root)
+          ListPageCard(
+            margin: _margin,
+            children: [
+              ListPageRow(
+                key: const ValueKey('android-shell-root-skip'),
+                title: l10n.androidShellRootSkip,
+                titleMaxLines: 2,
+                subtitle: l10n.androidShellRootSkipHint,
+                subtitleMaxLines: 4,
+                trailing: Switch(
+                  key: const ValueKey('android-shell-root-skip-switch'),
+                  value: _status.rootSkipConfirmation,
+                  onChanged: canSetup ? (value) => unawaited(_setRootSkip(value)) : null,
+                ),
+              ),
+            ],
+          ),
         if (shizuku && !_status.shizuku.granted)
           ListPageCard(margin: _margin, children: [authorize])
         else if (adb && !_status.adb.paired)
