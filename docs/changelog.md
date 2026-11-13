@@ -2,6 +2,30 @@
 
 每个版本先中文、后英文。发版时把对应版本的正文（不含版本标题）作为 Release 正文，见 `docs/release.md`。
 
+## 1.0.18 · 2026-11-13
+
+### 中文
+
+- **Root Android Shell 在已开启后会自动重连。** 只要设置里 Android Shell 开着且后端是 Root，App 启动或命令发现 su 进程不在时会再连一次，并核对 UID 0。不必每次重启后再点「连接 Root（su）」。KernelSU 本身没在运行时显示未连接和「su 不可用」，不会把旧的「已连接」留在界面上。
+- **模型多传的参数不再让 Android Shell 直接失败。** `android_shell` 只认 `command` 和可选的 `timeout_ms`。多出来的 `backend` 等字段会被忽略，后端仍只用 App 设置里选中的 Root、ADB 或 Shizuku。
+
+### English
+
+- **Root Android Shell reconnects after it was enabled.** If Android Shell stays on with the Root backend, the app starts su again at launch and when a command finds the host gone, then checks that the UID is 0. You do not have to tap Connect Root (su) after every reboot. If KernelSU itself is not running, the page shows disconnected and that su is unavailable, instead of a stale connected label.
+- **Extra Android Shell arguments no longer fail the call.** `android_shell` accepts `command` and an optional `timeout_ms`. Extra fields such as `backend` are ignored. The backend stays the Root, ADB, or Shizuku choice in App settings.
+
+## 1.0.17 · 2026-11-13
+
+### 中文
+
+- **Android Shell 增加 Root（KernelSU / su）通道。** 包名是 `io.github.thousandwinds.dshgo`，可与官方 DSH Go 同时安装。需要真实 Android root 时用 `android_shell` 的 Root 后端；Ubuntu/proot 里的 uid=0 不是真实 root。
+- **Root 可以单独打开「始终免确认」。** 默认关闭。打开前要确认高风险说明；关闭后立刻恢复逐条确认。ADB 和 Shizuku 仍逐条确认。屏幕操控的免确认不适用。
+
+### English
+
+- **Android Shell gains a Root (KernelSU / su) channel.** The package id is `io.github.thousandwinds.dshgo`, so it installs beside official DSH Go. Real Android root uses the Root `android_shell` backend; uid 0 inside Ubuntu/proot is not real root.
+- **Root has its own Always skip confirmation switch.** It is off by default. Turning it on requires a high-risk confirmation, and turning it off immediately restores per-command confirmation. ADB and Shizuku still confirm every command. Screen-control waivers do not apply.
+
 ## 1.0.16 · 2026-11-13
 
 ### 中文

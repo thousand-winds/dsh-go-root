@@ -81,6 +81,7 @@ void main() {
     expect(find.text(appL10n.androidShellLimits(30, 65536)), findsNothing);
     expect(find.byKey(const ValueKey('android-shell-authorize')), findsNothing);
     expect(find.byKey(const ValueKey('android-shell-connect-shizuku')), findsNothing);
+    expect(find.byKey(const ValueKey('android-shell-root-skip')), findsNothing);
     expect(find.byKey(const ValueKey('android-shell-stop')).hitTestable(), findsOneWidget);
     await openPhoneFold(tester, 'android-shell-details');
     expect(find.text('2000'), findsOneWidget);
@@ -347,6 +348,101 @@ void main() {
     expect(find.text(appL10n.androidShellErrorNativeUnavailable), findsWidgets);
   });
 
+  testWidgets('Root needs its own notice and an explicit connect before su', (tester) async {
+    final native = await _pump(tester);
+    await _tap(tester, 'android-shell-backend-root');
+    final choose = tester.widget<RiskNoticeSheet>(find.byType(RiskNoticeSheet)).notice;
+    expect(choose.id, 'phone.android-shell.root');
+    expect(choose.level, RiskLevel.high);
+    expect(choose.title, appL10n.androidShellRootRiskTitle);
+    expect(choose.body, appL10n.androidShellRootRiskBody);
+    expect(find.byKey(const ValueKey('risk-silence')), findsNothing);
+    expect(native.callsOf('configureAndroidShell'), isEmpty);
+    expect(native.callsOf('androidShellConnect'), isEmpty);
+    await tester.tap(find.descendant(of: find.byType(SheetHeader), matching: find.byType(SheetIconButton)));
+    await tester.pumpAndSettle();
+    expect(native.callsOf('configureAndroidShell'), isEmpty);
+    await _tap(tester, 'android-shell-backend-root');
+    await _tap(tester, 'risk-confirm');
+    expect(native.callsOf('configureAndroidShell').single.arguments, {'enabled': false, 'backend': 'root'});
+    expect(native.callsOf('androidShellConnect'), isEmpty);
+    expect(find.byKey(const ValueKey('android-shell-authorize')), findsNothing);
+    expect(find.byKey(const ValueKey('android-shell-pair')), findsNothing);
+    expect(tester.widget<ListPageRow>(find.byKey(const ValueKey('android-shell-connect-root'))).onTap, isNull);
+    native.status = shellStatus(enabled: true, backend: 'root', reasonCode: 'notConnected');
+    await tester.tap(find.text(appL10n.androidShellRefresh));
+    await tester.pumpAndSettle();
+    await _tap(tester, 'android-shell-connect-root');
+    expect(native.callsOf('androidShellConnect'), hasLength(1));
+    expect(native.callsOf('androidShellConnect').single.arguments, isEmpty);
+    expect(native.callsOf('androidShellRequestPermission'), isEmpty);
+    expect(native.callsOf('androidShellPair'), isEmpty);
+    await openPhoneFold(tester, 'android-shell-details');
+    expect(find.text(appL10n.androidShellRootHint), findsOneWidget);
+    expect(find.text(appL10n.androidShellAdbHint), findsNothing);
+    expect(find.text(appL10n.androidShellShizukuHint), findsNothing);
+  });
+
+  testWidgets('a dead Root host is not labeled connected', (tester) async {
+    await _pump(
+      tester,
+      native: ShellNative(
+        status: {
+          ...shellStatus(enabled: true, backend: 'root', ready: true, uid: 0, reasonCode: null),
+          'root': {'connected': false},
+        },
+      ),
+    );
+    expect(find.text(appL10n.androidShellReady), findsNothing);
+    expect(find.text(appL10n.androidShellErrorNotConnected), findsWidgets);
+    expect(find.text(appL10n.androidShellRootConnected), findsNothing);
+  });
+
+  testWidgets('su unavailable stays disconnected', (tester) async {
+    await _pump(
+      tester,
+      native: ShellNative(
+        status: {
+          ...shellStatus(enabled: true, backend: 'root', ready: false, reasonCode: 'suUnavailable'),
+          'root': {'connected': false},
+        },
+      ),
+    );
+    expect(find.text(appL10n.androidShellErrorSuUnavailable), findsWidgets);
+    expect(find.text(appL10n.androidShellReady), findsNothing);
+  });
+
+  testWidgets('Root skip confirmation is opt-in and leaves other backends alone', (tester) async {
+    final native = await _pump(
+      tester,
+      native: ShellNative(status: shellStatus(enabled: true, backend: 'root', ready: true, uid: 0, reasonCode: null)),
+    );
+    expect(find.text(appL10n.androidShellRootSkip), findsOneWidget);
+    expect(tester.widget<Switch>(find.byKey(const ValueKey('android-shell-root-skip-switch'))).value, isFalse);
+    await _tap(tester, 'android-shell-root-skip-switch');
+    final notice = tester.widget<RiskNoticeSheet>(find.byType(RiskNoticeSheet)).notice;
+    expect(notice.id, 'phone.android-shell.root-skip');
+    expect(notice.level, RiskLevel.high);
+    expect(notice.title, appL10n.androidShellRootSkipRiskTitle);
+    expect(find.byKey(const ValueKey('risk-silence')), findsNothing);
+    expect(native.callsOf('setAndroidShellRootSkip'), isEmpty);
+    await tester.tap(find.descendant(of: find.byType(SheetHeader), matching: find.byType(SheetIconButton)));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Switch>(find.byKey(const ValueKey('android-shell-root-skip-switch'))).value, isFalse);
+    await _tap(tester, 'android-shell-root-skip-switch');
+    await _tap(tester, 'risk-confirm');
+    expect(native.callsOf('setAndroidShellRootSkip').single.arguments, {'enabled': true});
+    expect(native.callsOf('androidShellConnect'), isEmpty);
+    expect(find.text(appL10n.androidShellRootSkipOnNote), findsOneWidget);
+    await _tap(tester, 'android-shell-root-skip-switch');
+    expect(find.byType(RiskNoticeSheet), findsNothing);
+    expect(native.callsOf('setAndroidShellRootSkip').last.arguments, {'enabled': false});
+    native.status = shellStatus(enabled: true, backend: 'adb', adbPaired: true, reasonCode: null);
+    await tester.tap(find.text(appL10n.androidShellRefresh));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('android-shell-root-skip')), findsNothing);
+  });
+
   test('stable errors are friendly in both languages and unknown codes fail safely', () {
     for (final locale in [AppLocale.zhCN, AppLocale.en]) {
       final l10n = lookupL10n(locale);
@@ -372,6 +468,7 @@ void main() {
         'nativeUnavailable',
         'invalidResponse',
         'stopFailed',
+        'suUnavailable',
       ]) {
         expect(androidShellErrorText(l10n, code), isNot(l10n.androidShellErrorUnknown));
       }

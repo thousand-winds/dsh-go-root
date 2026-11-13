@@ -119,6 +119,9 @@ class ProcessLaunchGuardTest {
         "app/android/app/src/main/kotlin/io/github/ccch1mneyyy/dsh_app/phone/background/RootProcess.kt",
         // Explicitly authorized Android Shell: Java-owned helper and its bounded child shell.
         "app/android/app/src/main/kotlin/io/github/ccch1mneyyy/dsh_app/phone/shell/AndroidShellProcess.kt",
+        // Android Shell root: one Java ProcessBuilder for `su -c` of the reviewed shell host.
+        // The test below pins that constructor. It is not the virtual-display RootProcess.
+        "app/android/app/src/main/kotlin/io/github/ccch1mneyyy/dsh_app/phone/shell/ShellRootBackend.kt",
         // The bounded privileged logcat reader also uses Java's fd-closing launcher.
         // The test below restricts this owner to one fixed-command ProcessBuilder.
         diagnosticJavaOwner,
@@ -251,6 +254,18 @@ class ProcessLaunchGuardTest {
             ".", "redirectErrorStream", "(", "true", ")", ".", "start", "(", ")")
         val actual = Code(source.substring(calls.single().offset), "kt").read().take(expected.size).map { it.text }
         assertEquals(expected, actual)
+    }
+
+    @Test fun rootShellOwnerOnlyLaunchesTheReviewedSuHost() {
+        val path = "app/android/app/src/main/kotlin/io/github/ccch1mneyyy/dsh_app/phone/shell/ShellRootBackend.kt"
+        val source = File(repository(), path).readText()
+        val calls = nativeCalls(source, "kt")
+        assertEquals(listOf("ProcessBuilder"), calls.map { it.text })
+        val expected = listOf("ProcessBuilder", "(", "it", ")", ".", "start", "(", ")")
+        assertEquals(expected, Code(source.substring(calls.single().offset), "kt").read()
+            .take(expected.size).map { it.text })
+        assertTrue(source.contains("RootCommands.shellHost("))
+        assertFalse(source.contains("PrivilegedDisplayMain"))
     }
 
     @Test fun shellOwnerOnlyLaunchesItsReviewedHelperAndAndroidSh() {

@@ -36,6 +36,7 @@ String androidShellErrorText(L10n l10n, String code) => switch (code) {
   'nativeUnavailable' => l10n.androidShellErrorNativeUnavailable,
   'invalidResponse' => l10n.androidShellErrorInvalidResponse,
   'stopFailed' => l10n.androidShellErrorStopFailed,
+  'suUnavailable' => l10n.androidShellErrorSuUnavailable,
   _ => l10n.androidShellErrorUnknown,
 };
 
@@ -105,17 +106,24 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
     }
   }
 
+  RiskNotice _shellRisk(L10n l10n, {required bool root, required String id}) => RiskNotice(
+    id: id,
+    level: RiskLevel.high,
+    title: root ? l10n.androidShellRootRiskTitle : l10n.androidShellRiskTitle,
+    body: root ? l10n.androidShellRootRiskBody : l10n.androidShellRiskBody,
+    action: root ? l10n.androidShellRootRiskAction : l10n.androidShellRiskAction,
+  );
+
   Future<void> _toggle(bool enabled) => _run(() async {
     if (enabled) {
       final l10n = context.l10n;
+      final root = _status.backend == AndroidShellBackend.root;
       final accepted = await confirmRisk(
         context,
-        RiskNotice(
-          id: 'phone.android-shell.enable',
-          level: RiskLevel.high,
-          title: l10n.androidShellRiskTitle,
-          body: l10n.androidShellRiskBody,
-          action: l10n.androidShellRiskAction,
+        _shellRisk(
+          l10n,
+          root: root,
+          id: root ? 'phone.android-shell.root-enable' : 'phone.android-shell.enable',
         ),
       );
       if (!accepted || !mounted) return const AndroidShellResult(true);
@@ -129,6 +137,36 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
 
   Future<void> _authorize() =>
       _run(() async => AndroidShellResult(await _channel.requestPermission(), errorCode: 'permissionRequired'));
+
+  /// Choosing Root is a separate high-risk step. It does not start su.
+  Future<void> _setRootSkip(bool enabled) => _run(() async {
+    if (enabled) {
+      final l10n = context.l10n;
+      final accepted = await confirmRisk(
+        context,
+        RiskNotice(
+          id: 'phone.android-shell.root-skip',
+          level: RiskLevel.high,
+          title: l10n.androidShellRootSkipRiskTitle,
+          body: l10n.androidShellRootSkipRiskBody,
+          action: l10n.androidShellRootSkipRiskAction,
+        ),
+      );
+      if (!accepted || !mounted) return const AndroidShellResult(true);
+    }
+    return _channel.setRootSkip(enabled);
+  });
+
+  Future<void> _selectBackend(AndroidShellBackend backend) => _run(() async {
+    if (backend == AndroidShellBackend.root) {
+      final accepted = await confirmRisk(
+        context,
+        _shellRisk(context.l10n, root: true, id: 'phone.android-shell.root'),
+      );
+      if (!accepted || !mounted) return const AndroidShellResult(true);
+    }
+    return _channel.configure(enabled: _status.enabled, backend: backend);
+  });
 
   Future<void> _adbInput({required bool pairing}) async {
     if (_busy || _stopping) return;
@@ -173,6 +211,11 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
     final timeout = _status.limits['maxTimeoutMs'];
     final output = _status.limits['maxOutputBytes'];
     final shizuku = _status.backend == AndroidShellBackend.shizuku;
+    final root = _status.backend == AndroidShellBackend.root;
+    final adb = _status.backend == AndroidShellBackend.adb;
+    // A dead su host must not keep the "connected" label from an earlier session.
+    final rootUp = !root || _status.root.connected;
+    final showReady = _status.ready && rootUp;
     final authorize = ListPageRow(
       key: const ValueKey('android-shell-authorize'),
       title: l10n.androidShellAuthorize,
@@ -201,7 +244,12 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
     return AppPage.list(
       title: l10n.androidShellTitle,
       children: [
-        PhoneNote(tone: NoteTone.warn, text: l10n.androidShellConfirmationNote),
+        PhoneNote(
+          tone: NoteTone.warn,
+          text: root && _status.rootSkipConfirmation
+              ? l10n.androidShellRootSkipOnNote
+              : l10n.androidShellConfirmationNote,
+        ),
         if (!phone.status.enabled) PhoneNote(text: l10n.androidShellMasterOff),
         ListPageCard(
           margin: _margin,
@@ -226,7 +274,7 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
                   ? androidShellErrorText(l10n, reasonCode)
                   : !_status.enabled
                   ? l10n.androidShellErrorDisabled
-                  : _status.ready
+                  : showReady
                   ? l10n.androidShellReady
                   : l10n.androidShellErrorNotConnected,
               subtitleMaxLines: 6,
@@ -251,29 +299,59 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
                 child: ListPageRow(
                   key: ValueKey('android-shell-backend-${backend.name}'),
                   leading: Icon(_status.backend == backend ? AppIcons.radioOn : AppIcons.radioOff),
-                  title: backend == AndroidShellBackend.shizuku ? 'Shizuku' : l10n.androidShellAdb,
-                  onTap: !canSetup || _status.backend == backend
-                      ? null
-                      : () => unawaited(_run(() => _channel.configure(enabled: _status.enabled, backend: backend))),
+                  title: switch (backend) {
+                    AndroidShellBackend.shizuku => 'Shizuku',
+                    AndroidShellBackend.adb => l10n.androidShellAdb,
+                    AndroidShellBackend.root => l10n.androidShellRoot,
+                  },
+                  onTap: !canSetup || _status.backend == backend ? null : () => unawaited(_selectBackend(backend)),
                 ),
               ),
           ],
         ),
-        if (shizuku && !_status.shizuku.granted)
-          ListPageCard(margin: _margin, children: [authorize])
-        else if (!shizuku && !_status.adb.paired)
-          ListPageCard(margin: _margin, children: pairing),
-        if (!_status.ready && (shizuku ? _status.shizuku.granted : _status.adb.paired))
+        if (root)
           ListPageCard(
             margin: _margin,
             children: [
               ListPageRow(
-                key: ValueKey(shizuku ? 'android-shell-connect-shizuku' : 'android-shell-connect'),
-                title: shizuku ? l10n.androidShellConnectChannel : l10n.androidShellConnect,
+                key: const ValueKey('android-shell-root-skip'),
+                title: l10n.androidShellRootSkip,
+                titleMaxLines: 2,
+                subtitle: l10n.androidShellRootSkipHint,
+                subtitleMaxLines: 4,
+                trailing: Switch(
+                  key: const ValueKey('android-shell-root-skip-switch'),
+                  value: _status.rootSkipConfirmation,
+                  onChanged: canSetup ? (value) => unawaited(_setRootSkip(value)) : null,
+                ),
+              ),
+            ],
+          ),
+        if (shizuku && !_status.shizuku.granted)
+          ListPageCard(margin: _margin, children: [authorize])
+        else if (adb && !_status.adb.paired)
+          ListPageCard(margin: _margin, children: pairing),
+        if (!_status.ready && (shizuku ? _status.shizuku.granted : (root || _status.adb.paired)))
+          ListPageCard(
+            margin: _margin,
+            children: [
+              ListPageRow(
+                key: ValueKey(
+                  shizuku
+                      ? 'android-shell-connect-shizuku'
+                      : root
+                      ? 'android-shell-connect-root'
+                      : 'android-shell-connect',
+                ),
+                title: root
+                    ? l10n.androidShellRootConnect
+                    : shizuku
+                    ? l10n.androidShellConnectChannel
+                    : l10n.androidShellConnect,
                 titleMaxLines: 2,
                 subtitle: !_status.enabled ? l10n.androidShellErrorDisabled : null,
                 onTap: canSetup && _status.enabled
-                    ? () => unawaited(shizuku ? _run(_channel.connect) : _adbInput(pairing: false))
+                    ? () => unawaited(adb ? _adbInput(pairing: false) : _run(_channel.connect))
                     : null,
               ),
             ],
@@ -297,7 +375,13 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
           children: [
             PhoneNote(text: l10n.androidShellSubtitle),
             PhoneNote(text: l10n.androidShellEnableHint),
-            PhoneNote(text: shizuku ? l10n.androidShellShizukuHint : l10n.androidShellAdbHint),
+            PhoneNote(
+              text: shizuku
+                  ? l10n.androidShellShizukuHint
+                  : root
+                  ? l10n.androidShellRootHint
+                  : l10n.androidShellAdbHint,
+            ),
             ListPageCard(
               margin: _margin,
               children: [
@@ -320,6 +404,8 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
                   _fact(l10n.androidShellRunning, _status.shizuku.running),
                   _fact(l10n.androidShellGranted, _status.shizuku.granted),
                   if (_status.shizuku.granted) authorize,
+                ] else if (root) ...[
+                  _fact(l10n.androidShellRootConnected, _status.root.connected),
                 ] else ...[
                   _fact(l10n.androidShellPaired, _status.adb.paired),
                   _fact(l10n.androidShellConnected, _status.adb.connected),
@@ -327,7 +413,7 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
                 ],
               ],
             ),
-            PhoneNote(text: shizuku ? l10n.androidShellAuthorizeHint : l10n.androidShellPairingGuide),
+            if (!root) PhoneNote(text: shizuku ? l10n.androidShellAuthorizeHint : l10n.androidShellPairingGuide),
             PhoneNote(text: l10n.androidShellStopHint),
           ],
         ),

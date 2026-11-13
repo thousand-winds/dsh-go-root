@@ -2,6 +2,8 @@
   <a href="README.md">简体中文</a> · <b>English</b>
 </p>
 
+> **Personal derivative, not an official build.** This repository, [thousand-winds/dsh-go-root](https://github.com/thousand-winds/dsh-go-root), is a personal derivative of [ccch1mneyyy/dsh-Go](https://github.com/ccch1mneyyy/dsh-Go) and is not affiliated with the upstream project. `main` imports upstream commit [`efa70c152128dfdc03e17441f3b4848ed41fbffe`](https://github.com/ccch1mneyyy/dsh-Go/commit/efa70c152128dfdc03e17441f3b4848ed41fbffe). APKs built here are on [this repository’s Releases](https://github.com/thousand-winds/dsh-go-root/releases), including [v1.0.18 arm64](https://github.com/thousand-winds/dsh-go-root/releases/tag/v1.0.18). See [README.md](README.md). The page below is the upstream English introduction.
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-en-dark.webp">

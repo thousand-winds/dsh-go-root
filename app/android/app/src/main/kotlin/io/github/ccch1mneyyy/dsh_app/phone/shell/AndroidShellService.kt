@@ -90,23 +90,34 @@ class AndroidShellService(context: Context) : IAndroidShell.Stub() {
     }
 }
 
-/** Self-ADB stdin/stdout control channel; EOF is an owned-process cancellation, not detachment. */
+/** Shared stdin/stdout shell host. EOF retires the process; it is not the virtual-display protocol. */
+private fun runShellHostStdio() {
+    val host = ShellHost(System.getenv("CLASSPATH") ?: System.getProperty("java.class.path"))
+    val output = FileOutputStream(FileDescriptor.out)
+    try {
+        output.write(ShellWire.magic); output.flush()
+        while (true) {
+            val bytes = ShellWire.read(System.`in`) ?: break
+            val request = Bundles.unmarshal(bytes)
+            ShellWire.write(output, Bundles.marshal(host.handle(request)))
+            if (request.getString("op") == "destroy") break
+        }
+    } catch (_: Exception) {
+        // Protocol loss retires this host; never print command data into the control stream.
+    } finally { host.destroy() }
+}
+
+/** Self-ADB stdin/stdout control channel. */
 @androidx.annotation.Keep
 object AndroidShellMain {
-    @JvmStatic
-    fun main(args: Array<String>) {
-        val host = ShellHost(System.getenv("CLASSPATH") ?: System.getProperty("java.class.path"))
-        val output = FileOutputStream(FileDescriptor.out)
-        try {
-            output.write(ShellWire.magic); output.flush()
-            while (true) {
-                val bytes = ShellWire.read(System.`in`) ?: break
-                val request = Bundles.unmarshal(bytes)
-                ShellWire.write(output, Bundles.marshal(host.handle(request)))
-                if (request.getString("op") == "destroy") break
-            }
-        } catch (_: Exception) {
-            // Protocol loss retires this host; never print command data into the control stream.
-        } finally { host.destroy() }
-    }
+    @JvmStatic fun main(args: Array<String>) = runShellHostStdio()
+}
+
+/**
+ * Root shell host, started only as `su -c 'CLASSPATH=… exec /system/bin/app_process /system/bin <this>'`.
+ * The process is UID 0, so child `/system/bin/sh` jobs inherit root. Not [io.github.ccch1mneyyy.dsh_app.phone.background.PrivilegedDisplayMain].
+ */
+@androidx.annotation.Keep
+object ShellRootMain {
+    @JvmStatic fun main(args: Array<String>) = runShellHostStdio()
 }

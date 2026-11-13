@@ -16,6 +16,7 @@ class PhoneAndroidShellTest {
         var backendAvailable = true
         var backend = "shizuku"
         var uid = 2000
+        var rootSkip = false
         var policies = PhonePolicies()
         var decision = Decision.ALLOW_ONCE
         var beforeConfirm: () -> Unit = {}
@@ -49,6 +50,7 @@ class PhoneAndroidShellTest {
             override fun policies() = this@Fixture.policies
             override fun isLocked() = locked
             override fun androidShell() = executor.takeIf { backendAvailable }
+            override fun androidShellRootSkipConfirmation() = rootSkip
             override fun gate() = if (!gateAvailable) null else object : UserGate {
                 override fun confirm(request: ConfirmRequest): Decision {
                     asks += request
@@ -86,12 +88,15 @@ class PhoneAndroidShellTest {
         assertEquals(60_000L, checkNotNull(parse("id", mapOf("timeout_ms" to 60_000L))).timeoutMs)
     }
 
-    @Test fun commandRequiresARealNonblankStringAndOnlyDocumentedKeys() {
+    @Test fun commandRequiresARealNonblankStringAndIgnoresUnknownKeys() {
         for (command in listOf(null, true, 1, 1L, listOf("id"), "", " \t\r\n"))
             assertNull("must reject command=$command", parse(command))
         assertNull(PhoneAndroidShell.parse(Args(emptyMap())))
-        for (key in listOf("backend", "uid", "background", "screen", "max_output_bytes", "confirm"))
-            assertNull("must reject extra key $key", parse("id", mapOf(key to null)))
+        for (key in listOf("backend", "uid", "background", "screen", "max_output_bytes", "confirm")) {
+            val request = checkNotNull(parse("id", mapOf(key to "ignored")))
+            assertEquals("id", request.command)
+            assertEquals(PhoneAndroidShell.DEFAULT_TIMEOUT_MS, request.timeoutMs)
+        }
     }
 
     @Test fun timeoutRequiresAnActualIntegerWithinTheInclusiveRange() {
@@ -118,15 +123,44 @@ class PhoneAndroidShellTest {
         assertNotNull(parse("printf a\t\r\nprintf b\n"))
     }
 
-    @Test fun invalidArgumentsNeverReachBackendOrConfirmation() {
+    @Test fun invalidTimeoutStillNeverReachesBackendOrConfirmation() {
         Fixture().use { f ->
-            for (extra in listOf(mapOf("timeout_ms" to "100"), mapOf("timeout_ms" to null), mapOf("uid" to 0))) {
+            for (extra in listOf(mapOf("timeout_ms" to "100"), mapOf("timeout_ms" to null))) {
                 val out = f.call(extra = extra)
                 assertTrue(out.isError)
                 assertEquals("invalidArguments", (Json.parse(out.text) as Map<*, *>)["errorCode"])
+                assertNull((Json.parse(out.text) as Map<*, *>)["backend"])
             }
             assertEquals(0, f.executorCalls)
             assertTrue(f.asks.isEmpty())
+        }
+    }
+
+    @Test fun extraKeysIncludingBackendAreIgnoredAndSettingsBackendIsUsed() {
+        val parsed = parse("id", mapOf("backend" to "root", "uid" to 0))
+        assertNotNull(parsed)
+        assertEquals("id", parsed!!.command)
+        assertEquals(PhoneAndroidShell.DEFAULT_TIMEOUT_MS, parsed.timeoutMs)
+        Fixture().use { f ->
+            f.backend = "shizuku"
+            f.uid = 2000
+            val out = f.call("id", mapOf("backend" to "root"))
+            assertFalse(out.isError)
+            assertEquals("id", f.capturedCommand)
+            val ask = f.asks.single()
+            assertTrue(ask.sentence.contains("shizuku"))
+            assertTrue(ask.sentence.contains("2000"))
+            assertFalse(ask.sentence.contains("backend"))
+        }
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 0
+            f.rootSkip = true
+            val out = f.call("id", mapOf("backend" to "adb"))
+            assertFalse(out.isError)
+            assertTrue(f.asks.isEmpty())
+            assertEquals(1, f.dispatches)
+            assertEquals("id", f.capturedCommand)
         }
     }
 
@@ -151,6 +185,67 @@ class PhoneAndroidShellTest {
             assertNull(ask.appLabel)
             assertNull(ask.visualScope)
             assertEquals(1, f.dispatches)
+        }
+    }
+
+    @Test fun rootPromptShowsUidZeroCommandAndRefusesShellUid() {
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 0
+            val command = "id -u"
+            assertFalse(f.call(command).isError)
+            val ask = f.asks.single()
+            assertTrue(ask.sentence.contains("root"))
+            assertTrue(ask.sentence.contains("UID 0"))
+            assertTrue(ask.sentence.endsWith(command))
+            assertFalse(ask.offerTaskWaiver)
+            assertEquals(1, f.dispatches)
+        }
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 2000
+            assertTrue(f.call("id").isError)
+            assertTrue(f.asks.isEmpty())
+            assertEquals(0, f.dispatches)
+        }
+    }
+
+    @Test fun rootSkipConfirmationSkipsOnlyConnectedUidZero() {
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 0
+            f.rootSkip = false
+            assertFalse(f.call("id -u").isError)
+            assertEquals(1, f.asks.size)
+        }
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 0
+            f.rootSkip = true
+            val command = "id -u"
+            assertFalse(f.call(command).isError)
+            assertTrue(f.asks.isEmpty())
+            assertEquals(1, f.dispatches)
+            assertEquals(command, f.capturedCommand)
+            f.rootSkip = false
+            assertFalse(f.call(command).isError)
+            assertEquals(1, f.asks.size)
+            assertEquals(2, f.dispatches)
+        }
+        Fixture().use { f ->
+            f.backend = "root"
+            f.uid = 2000
+            f.rootSkip = true
+            assertTrue(f.call("id").isError)
+            assertTrue(f.asks.isEmpty())
+            assertEquals(0, f.dispatches)
+        }
+        for (backend in listOf("adb", "shizuku")) Fixture().use { f ->
+            f.backend = backend
+            f.uid = if (backend == "adb") 2000 else 0
+            f.rootSkip = true
+            assertFalse(f.call("id").isError)
+            assertEquals(1, f.asks.size)
         }
     }
 
@@ -223,11 +318,12 @@ class PhoneAndroidShellTest {
     }
 
     @Test fun backendAndActualUidMustBeRecognizedBeforeAsking() {
-        for ((backend, uid) in listOf("adb" to 2000, "shizuku" to 0, "shizuku" to 2000,
-                "adb" to 0, "adb" to 10000, "shizuku" to -1, "unknown" to 0)) Fixture().use { f ->
+        for ((backend, uid) in listOf("adb" to 2000, "shizuku" to 0, "shizuku" to 2000, "root" to 0,
+                "adb" to 0, "adb" to 10000, "shizuku" to -1, "unknown" to 0, "root" to 2000, "root" to -1)) Fixture().use { f ->
             f.backend = backend
             f.uid = uid
-            val valid = (backend == "adb" && uid == 2000) || (backend == "shizuku" && uid in setOf(0, 2000))
+            val valid = (backend == "adb" && uid == 2000) || (backend == "shizuku" && uid in setOf(0, 2000)) ||
+                (backend == "root" && uid == 0)
             assertEquals(!valid, f.call().isError)
             assertEquals(if (valid) 1 else 0, f.asks.size)
             assertEquals(if (valid) 1 else 0, f.dispatches)

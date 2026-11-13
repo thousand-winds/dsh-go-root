@@ -9,11 +9,13 @@ int? _nonNegativeInt(Object? value) => value is int && value >= 0 ? value : null
 
 enum AndroidShellBackend {
   shizuku,
-  adb;
+  adb,
+  root;
 
   static AndroidShellBackend? parse(Object? value) => switch (value) {
     'shizuku' => shizuku,
     'adb' => adb,
+    'root' => root,
     _ => null,
   };
 }
@@ -42,6 +44,15 @@ class AndroidShellAdbStatus {
   final bool connected;
 }
 
+class AndroidShellRootStatus {
+  const AndroidShellRootStatus({this.connected = false});
+
+  factory AndroidShellRootStatus.fromMap(Map<Object?, Object?> value) =>
+      AndroidShellRootStatus(connected: value['connected'] == true);
+
+  final bool connected;
+}
+
 /// Independent of the screen-control/background-display status and permissions.
 class AndroidShellStatus {
   const AndroidShellStatus({
@@ -49,10 +60,12 @@ class AndroidShellStatus {
     this.enabled = false,
     this.backend = AndroidShellBackend.shizuku,
     this.ready = false,
+    this.rootSkipConfirmation = false,
     this.uid,
     this.reasonCode,
     this.shizuku = const AndroidShellShizukuStatus(),
     this.adb = const AndroidShellAdbStatus(),
+    this.root = const AndroidShellRootStatus(),
     this.limits = const {},
   });
 
@@ -72,10 +85,12 @@ class AndroidShellStatus {
       enabled: value['enabled'] == true,
       backend: backend,
       ready: value['ready'] == true,
+      rootSkipConfirmation: value['rootSkipConfirmation'] == true,
       uid: _nonNegativeInt(value['uid']),
       reasonCode: _code(value['reasonCode']),
       shizuku: AndroidShellShizukuStatus.fromMap(_map(value['shizuku'])),
       adb: AndroidShellAdbStatus.fromMap(_map(value['adb'])),
+      root: AndroidShellRootStatus.fromMap(_map(value['root'])),
       limits: Map.unmodifiable({
         for (final key in const ['defaultTimeoutMs', 'maxTimeoutMs', 'maxOutputBytes', 'maxCommandBytes'])
           key: ?_nonNegativeInt(limits[key]),
@@ -87,10 +102,12 @@ class AndroidShellStatus {
   final bool enabled;
   final AndroidShellBackend backend;
   final bool ready;
+  final bool rootSkipConfirmation;
   final int? uid;
   final String? reasonCode;
   final AndroidShellShizukuStatus shizuku;
   final AndroidShellAdbStatus adb;
+  final AndroidShellRootStatus root;
   final Map<String, int> limits;
 }
 
@@ -146,6 +163,10 @@ class AndroidShellChannel {
   }
 
   Future<bool> stop() => _bool('androidShellStop');
+
+  /// Root Android Shell only. Does not connect or run a command.
+  Future<AndroidShellResult> setRootSkip(bool enabled) =>
+      _result('setAndroidShellRootSkip', {'enabled': enabled});
 
   bool _validPort(int? port) => port == null || (port >= 1 && port <= 65535);
 

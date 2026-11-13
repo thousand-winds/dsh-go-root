@@ -14,7 +14,8 @@ object PhoneAndroidShell {
     data class Request(val command: String, val timeoutMs: Long)
 
     fun parse(args: Args): Request? {
-        if (!args.onlyKeys("command", "timeout_ms")) return null
+        // The model sometimes adds backend or other keys. Those are ignored:
+        // the App settings choose the backend, and extra keys must not reject the call.
         val command = args.strictText("command") ?: return null
         if (!validCommand(command)) return null
         val timeout = if (args.provided("timeout_ms")) args.strictInt("timeout_ms")?.toLong() ?: return null
@@ -45,7 +46,8 @@ object PhoneAndroidShell {
 
     fun run(request: Request, owner: PhoneTasks.Owner, tasks: PhoneTasks, scope: SerialWorker.Scope,
             executor: PhoneShellExecutor?, enabled: () -> Boolean, locked: () -> Boolean,
-            gate: () -> UserGate?, ui: PhoneUiText): Map<String, Any?> {
+            gate: () -> UserGate?, ui: PhoneUiText,
+            rootSkipConfirmation: () -> Boolean = { false }): Map<String, Any?> {
         fun live() = tasks.isCurrent(owner) && !tasks.isPaused && enabled() && !locked() &&
             !Thread.currentThread().isInterrupted
         if (locked()) return failure("locked")
@@ -53,7 +55,11 @@ object PhoneAndroidShell {
         if (executor == null) return failure("unsupported")
         return executor.execute(owner.taskId, request.command, request.timeoutMs, ::live) { backend, uid ->
             if (!live()) Decision.STOP
-            else if (!(backend == "adb" && uid == 2000 || backend == "shizuku" && uid in setOf(0, 2000))) Decision.DENY
+            else if (!(backend == "adb" && uid == 2000 || backend == "shizuku" && uid in setOf(0, 2000) ||
+                    backend == "root" && uid == 0)) Decision.DENY
+            else if (backend == "root" && uid == 0 && rootSkipConfirmation()) {
+                if (live()) Decision.ALLOW_ONCE else Decision.STOP
+            }
             else {
                 val prompt = ConfirmRequest(
                     ui.get("phone_shell_confirm",

@@ -1040,6 +1040,8 @@ class PhoneControl private constructor(private val app: Context) : PhoneEnv, Con
         shell.execute(ownerId, command, timeoutMs, live, confirm)
     }
 
+    override fun androidShellRootSkipConfirmation(): Boolean = shell.rootSkipConfirmation()
+
     override fun zone(): ZoneId = ZoneId.systemDefault()
 
     override fun notifyFix(kind: String) = notifyFixFor(tasks, kind)

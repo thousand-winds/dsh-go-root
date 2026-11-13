@@ -73,7 +73,7 @@ internal class BackgroundInputProbe(private val context: Context, private val di
                 throw probe.failure("inputWindowNotReady")
             probe.entered(InputProbeDiagnostics.Stage.ACTIVITY_START)
             val intent = Intent().apply {
-                component = ComponentName(ProbeActivityContract.PACKAGE, ProbeActivityContract.ACTIVITY)
+                component = ComponentName(context.packageName, ProbeActivityContract.ACTIVITY)
                 identifier = nonce
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
                 putExtra(ProbeActivityContract.NONCE, nonce)

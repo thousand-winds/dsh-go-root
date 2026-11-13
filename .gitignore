@@ -17,6 +17,10 @@ app/android/build/
 # build outputs never belong in git
 *.apk
 *.aab
+# fork signing key; never commit the keystore or its passwords
+*.jks
+*.keystore
+**/key.properties
 # golden-test failure dumps (flutter test writes them next to the goldens)
 **/test/**/failures/
 

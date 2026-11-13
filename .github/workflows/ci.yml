@@ -93,7 +93,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # Shard 2 was still passing tests when the 25-minute cap cancelled it.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:

@@ -3083,7 +3083,7 @@ abstract class L10n {
   /// No description provided for @androidShellSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'通过 Shizuku 或自连 ADB 在这台手机上执行 Android 系统命令，不是 Ubuntu 里的 bash。'**
+  /// **'通过 Shizuku、自连 ADB 或 Root（KernelSU / su）在这台手机上执行 Android 系统命令，不是 Ubuntu 里的 bash。'**
   String get androidShellSubtitle;
 
   /// No description provided for @androidShellEnable.
@@ -3163,6 +3163,84 @@ abstract class L10n {
   /// In zh, this message translates to:
   /// **'连接本机的无线调试，复用 App 的私有 ADB 身份；不会连接其他设备。'**
   String get androidShellAdbHint;
+
+  /// No description provided for @androidShellRoot.
+  ///
+  /// In zh, this message translates to:
+  /// **'Root（KernelSU / su）'**
+  String get androidShellRoot;
+
+  /// No description provided for @androidShellRootHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'用 KernelSU、Magisk 或 APatch 的 su 启动独立 shell，子进程以 UID 0 运行 /system/bin/sh。默认关闭。先选择本方式并阅读高风险提示，再打开开关，然后点连接才会调用 su。首次连接可能停在 KernelSU 授权界面，大约等待 30 秒。连接后核对真实 UID，不是 0 就拒绝执行。su 进程可以保持，避免每条命令都弹出授权；应用内仍逐条确认，卡片显示完整命令和身份 root、UID 0。屏幕操控的免确认不适用。不会自动重试，也不会改走 ADB 或 Shizuku，更不会从 Ubuntu 里调用 su。这个安装包是新应用，需要在 KernelSU 里重新授权。'**
+  String get androidShellRootHint;
+
+  /// No description provided for @androidShellRootRiskTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许通过 su 以 root 执行系统命令？'**
+  String get androidShellRootRiskTitle;
+
+  /// No description provided for @androidShellRootRiskBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'这会用 KernelSU、Magisk 或 APatch 的 su 启动 UID 0 的 Android shell，命令可以修改系统和应用数据。它默认关闭。选择 Root 后，还要打开开关并点连接，才会第一次调用 su。连接后如果真实 UID 不是 0，命令会被拒绝。每条命令仍单独确认，确认卡显示完整命令和身份 root、UID 0。屏幕操控的「本任务免确认」和「始终免确认」不适用。失败后不会自动重试，也不会静默改用 ADB 或 Shizuku。'**
+  String get androidShellRootRiskBody;
+
+  /// No description provided for @androidShellRootRiskAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'我已了解，使用 Root'**
+  String get androidShellRootRiskAction;
+
+  /// No description provided for @androidShellRootConnect.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接 Root（su）'**
+  String get androidShellRootConnect;
+
+  /// No description provided for @androidShellRootConnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'Root shell 已连接'**
+  String get androidShellRootConnected;
+
+  /// No description provided for @androidShellRootSkip.
+  ///
+  /// In zh, this message translates to:
+  /// **'始终免确认'**
+  String get androidShellRootSkip;
+
+  /// No description provided for @androidShellRootSkipHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'只作用于 Root（KernelSU / su）。打开后，已连接且 UID 为 0 的命令不再弹出确认卡。ADB 和 Shizuku 仍逐条确认。屏幕操控的免确认仍然不适用。'**
+  String get androidShellRootSkipHint;
+
+  /// No description provided for @androidShellRootSkipOnNote.
+  ///
+  /// In zh, this message translates to:
+  /// **'Root 的始终免确认已打开：UID 0 的命令直接执行。ADB 和 Shizuku 仍逐条确认。'**
+  String get androidShellRootSkipOnNote;
+
+  /// No description provided for @androidShellRootSkipRiskTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许 Root 命令不再确认？'**
+  String get androidShellRootSkipRiskTitle;
+
+  /// No description provided for @androidShellRootSkipRiskBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'Root 可以修改系统和应用数据。打开后，已连接且真实 UID 为 0 的 Root 通道会直接执行命令，不再显示确认卡。必须仍然开启 Android Shell 并保持 Root 已连接。关闭后立刻恢复逐条确认。'**
+  String get androidShellRootSkipRiskBody;
+
+  /// No description provided for @androidShellRootSkipRiskAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'始终免确认'**
+  String get androidShellRootSkipRiskAction;
 
   /// No description provided for @androidShellInstalled.
   ///
@@ -3331,6 +3409,12 @@ abstract class L10n {
   /// In zh, this message translates to:
   /// **'所选通道尚未连接。'**
   String get androidShellErrorNotConnected;
+
+  /// No description provided for @androidShellErrorSuUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'KernelSU 的 su 不可用。等 KernelSU 恢复后再连接；现在并没有连上。'**
+  String get androidShellErrorSuUnavailable;
 
   /// No description provided for @androidShellErrorShizukuMissing.
   ///

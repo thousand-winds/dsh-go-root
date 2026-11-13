@@ -64,6 +64,10 @@ class ShellNative {
         return {'ok': true};
       case 'androidShellStop':
         return true;
+      case 'setAndroidShellRootSkip':
+        final args = call.arguments as Map;
+        status = {...status, 'rootSkipConfirmation': args['enabled'] == true};
+        return {'ok': true};
       default:
         throw MissingPluginException(call.method);
     }

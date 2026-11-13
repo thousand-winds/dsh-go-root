@@ -27,7 +27,8 @@ object GuestSetup {
         |<!-- dsh-app:managed — 删除这一行后，DSH App 不再覆盖本文件 -->
         |# 运行环境（DSH 手机版）
         |
-        |- 你运行在 Android 手机上的 Ubuntu 24.04 环境里（proot，免 Root）。这里没有可用的沙箱后端（bubblewrap / Landlock 都不可用），`workspace-write` 沙箱模式一定会被拒绝。
+        |- 你运行在 Android 手机上的 Ubuntu 24.04 环境里（proot，免 Root）。这里没有可用的沙箱后端（bubblewrap / Landlock 都不可用），`workspace-write` 沙箱模式一定会被拒绝。proot 里的 `id` / `whoami` 即使显示 uid=0，也只是容器里的假 root，不是 Android 或 KernelSU 的真实 root。
+        |- 需要真实 Android root、KernelSU `su`、系统文件，或原生 Android shell（不是这个 Linux 容器）时，调用 `mcp__phone__android_shell`。只传 `command` 和可选的 `timeout_ms`，不要传 `backend`；App 会自动使用设置里已经选好的 Root、ADB 或 Shizuku。不要用 Ubuntu bash，也不要用 `danger-full-access` 去判断有没有 root；没先调用 Android Shell，不要告诉用户没有 root。
 """ +
         // l10n:keep agent prompt
         """        |- 需要执行 bash 命令时，直接用 `sandbox_permissions: "danger-full-access"` 申请运行，并用一句话写明理由；不要先试沙箱模式。
