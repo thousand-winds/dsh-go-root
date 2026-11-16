@@ -83,7 +83,15 @@ void main() {
         expect(_pixel(background, 1023, 1023), _isNear(_lerp(art, 0.931)), reason: '${choice.name} bottom right');
         final foreground = await _decode('$_project/AppScope/resources/base/media/${choice.name}_foreground.png');
         expect(_pixel(foreground, 0, 0).a, 0, reason: 'the launcher masks a transparent layer');
-        expect(_pixel(foreground, 512, 720).a, greaterThan(0.9), reason: 'the body of the glyph');
+        // A glyph, not a full tile: 白鲸's silhouette carries less ink than the brand glyph and
+        // does not cover the pixel the other four do, so measure the layer instead of one point.
+        var ink = 0;
+        for (var y = 0; y < 1024; y += 4) {
+          for (var x = 0; x < 1024; x += 4) {
+            if (_pixel(foreground, x, y).a > 0.5) ink++;
+          }
+        }
+        expect(ink / (256 * 256), inInclusiveRange(0.04, 0.3), reason: choice.name);
       }
     });
   });

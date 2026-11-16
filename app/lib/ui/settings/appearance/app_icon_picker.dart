@@ -15,15 +15,16 @@ import '../../common/pressable.dart';
 import '../../shell/brand_glyph.g.dart';
 import '../../theme/theme.dart';
 import '../../common/brief_notice.dart';
+import 'whale_glyph.g.dart';
 
-/// The four launcher icons in a row, drawn as the launcher draws them (the
+/// The launcher icons in a row, drawn as the launcher draws them (the
 /// system's icon mask), the one on the phone ringed in the accent:
 ///
 /// ```
-///   ╭───╮      ╭───╮      ╭───╮      ╭───╮
-///  ( ◖● )     │ ◖● │     │ ◖● │     │ ◖● │    a ring [ringGap] off the chosen
-///   ╰───╯      ╰───╯      ╰───╯      ╰───╯    icon, in the icon's own shape
-///   雾蓝        夜幕        霜白         墨
+///   ╭───╮      ╭───╮      ╭───╮      ╭───╮      ╭───╮
+///  ( ◖● )     │ ◖● │     │ ◖● │     │ ◖● │     │ ◖● │   a ring [ringGap] off the
+///   ╰───╯      ╰───╯      ╰───╯      ╰───╯      ╰───╯   chosen icon, in the icon's
+///   雾蓝        夜幕        霜白         墨        白鲸      own shape
 /// ```
 ///
 /// Equal columns [gap] apart, [padding] on every side; each icon is centred in
@@ -198,7 +199,7 @@ class _RingPainter extends CustomPainter {
 
 /// How each launcher icon is drawn: the gradient of its background layer
 /// (`res/drawable/ic_launcher[_<name>]_background.xml`, the same diagonal for
-/// all four) and its glyph.
+/// all of them) and its glyph.
 class AppIconArt {
   const AppIconArt._(this.from, this.to, this.glyph, [this.mono]);
 
@@ -221,11 +222,15 @@ class AppIconArt {
     AppIcon.night => const AppIconArt._(Color(0xFF2C3D6C), Color(0xFF0C122D), AppIconGlyph.glassDark),
     AppIcon.frost => const AppIconArt._(Color(0xFFFCFDFF), Color(0xFFDDE5F8), AppIconGlyph.glassLight),
     AppIcon.ink => const AppIconArt._(Color(0xFF292B30), Color(0xFF0D0E11), AppIconGlyph.mono, Color(0xFFF5F7FB)),
+    // 白鲸 has a master picture of its own, so its glyph is traced from it
+    // (whale_glyph.g.dart) rather than drawn from the brand glyph.
+    AppIcon.whale => const AppIconArt._(Color(0xFFFCFDFE), Color(0xFFE7EBF2), AppIconGlyph.whale),
   };
 }
 
-/// The brand glyph's three renderings (`assets/brand/glyph-*.svg`).
-enum AppIconGlyph { glassDark, glassLight, mono }
+/// The glyphs the previews draw: the brand glyph's three renderings (`assets/brand/glyph-*.svg`)
+/// and 白鲸's traced one (`whale_glyph.g.dart`).
+enum AppIconGlyph { glassDark, glassLight, mono, whale }
 
 /// [icon] as the launcher shows it: [size] square, cut to [mask] (an outline
 /// in 0…1, see [AppIconState.mask]; a rounded square when null), with a
@@ -272,6 +277,8 @@ class _IconPainter extends CustomPainter {
         canvas
           ..drawPath(BrandGlyph.body, paint)
           ..drawPath(BrandGlyph.bubble, paint);
+      case AppIconGlyph.whale:
+        canvas.drawPath(WhaleGlyph.body, Paint()..color = WhaleGlyph.colour);
       case AppIconGlyph.glassDark || AppIconGlyph.glassLight:
         final dark = art.glyph == AppIconGlyph.glassDark;
         canvas

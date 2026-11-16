@@ -84,12 +84,12 @@ AppIcon? _chosen(WidgetTester tester) {
 
 void main() {
   group('picker', () {
-    testWidgets('four icons in order, the one on the phone chosen', (tester) async {
+    testWidgets('the icons in order, the one on the phone chosen', (tester) async {
       final handle = tester.ensureSemantics();
       await _pump(tester, _FakeLauncher(current: AppIcon.night));
       final xs = [for (final icon in AppIcon.values) tester.getCenter(find.text(icon.label)).dx];
       expect(xs, orderedEquals([...xs]..sort()));
-      expect(AppIcon.values.map((i) => i.label), ['雾蓝', '夜幕', '霜白', '墨']);
+      expect(AppIcon.values.map((i) => i.label), ['雾蓝', '夜幕', '霜白', '墨', '白鲸']);
       expect(_chosen(tester), AppIcon.night);
       handle.dispose();
     });
