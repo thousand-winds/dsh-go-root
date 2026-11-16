@@ -44,6 +44,9 @@
     <style name="LaunchTheme.Ink">
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_ink</item>
     </style>
+    <style name="LaunchTheme.Whale">
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_whale</item>
+    </style>
     <!-- A custom launch screen on white or black: no icon, that colour (the picture fades in over it). -->
     <style name="LaunchTheme.White">
         <item name="android:windowBackground">@android:color/white</item>
