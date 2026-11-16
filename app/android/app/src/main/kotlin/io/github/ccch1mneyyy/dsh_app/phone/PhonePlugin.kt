@@ -106,7 +106,7 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         control.selfCheck.stop(promptOwner)
-        control.background.changeGateIntent { attached = false }
+        attached = false
         skillSelectionRequest = Any()
         skillInspection = null
         skillClient?.let { control.skillReplaySelections.retireClient(it); control.skillDrafts.retireClient(it) }
@@ -209,6 +209,13 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
                     result.success(mapOf("ok" to false, "errorCode" to "invalidArguments"))
                 } else async(result, shortControl = true) { control.shell.setRootSkipConfirmation(enabled) }
             }
+            "setAndroidShellAllowConcurrent" -> {
+                val args = call.arguments as? Map<*, *>
+                val enabled = args?.get("enabled") as? Boolean
+                if (args?.keys != setOf("enabled") || enabled == null) {
+                    result.success(mapOf("ok" to false, "errorCode" to "invalidArguments"))
+                } else async(result, shortControl = true) { control.shell.setAllowConcurrent(enabled) }
+            }
             "androidShellRequestPermission" -> async(result) { control.shell.requestShizukuPermission() }
             "androidShellStartPairing" -> async(result) { control.shell.startAdbPairing() }
             "androidShellPair" -> {
@@ -231,9 +238,7 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
                 (call.argument<Any?>("batchToken") as? String)?.let(control::acknowledgeTaskInterruption) == true
             }
             "retryTaskInterruptionStorage" -> async(result) { control.retryTaskInterruptionStorage() }
-            "retryBackgroundRecovery" -> async(result) { control.retryBackgroundRecovery() }
-            "startPhoneSelfCheck", "phoneSelfCheckStatus", "cancelPhoneSelfCheck",
-            "retryPhoneSelfCheckCleanup" -> selfCheckCall(call, result)
+            "startPhoneSelfCheck", "phoneSelfCheckStatus", "cancelPhoneSelfCheck" -> selfCheckCall(call, result)
             "setBackgroundParallelLimit" -> async(result, shortControl = true) {
                 val args = call.arguments as? Map<*, *>
                 control.setBackgroundParallelLimit(if (args != null && args.keys == setOf("limit")) args["limit"] else null)
@@ -282,7 +287,7 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
                 val enabled = call.argument<Boolean>("enabled") == true
                 if (!enabled) {
                     control.selfCheck.stop()
-                        control.background.changeGateIntent { privilegedActions.select() }
+                    privilegedActions.select()
                     val cleared = control.background.clearKeep()
                     controlIo.execute { control.background.saveKeep(cleared) }
                     control.background.cancelRootSelection()
@@ -301,7 +306,7 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
             "setBackgroundMode" -> {
                 val mode = call.argument<String>("mode") ?: "off"
                 control.selfCheck.stop()
-                val live = stillWanted(control.background.changeGateIntent { privilegedActions.select() })
+                val live = stillWanted(privilegedActions.select())
                 // A mode intent revokes keep before it waits behind any older long operation.
                 control.background.clearKeepForMode(mode)?.let { cleared ->
                     controlIo.execute { control.background.saveKeep(cleared) }
@@ -309,20 +314,13 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
                 if (mode != "root") control.background.cancelRootSelection()
                 async(result) { if (live()) control.background.setBackgroundMode(mode, live) else cancelledSelection() }
             }
-            "retryBackgroundGateCleanup" -> {
-                val args = call.arguments as? Map<*, *>
-                val handle = args?.get("handle") as? String
-                if (args == null || args.keys != setOf("v", "handle") || args["v"] !is Int || args["v"] != 1 || handle == null) {
-                    result.success(mapOf("ok" to false, "reason" to AppStrings.get(appContext, R.string.background_gate_cleanup_stale)))
-                } else async(result) { control.background.retryGateCleanup(handle) }
-            }
             "requestShizukuPermission" -> {
                 val live = stillWanted(privilegedActions.snapshot())
                 val provider = call.argument<String>("provider")
                 async(result) { live() && control.background.requestShizukuPermission(provider) }
             }
             "prepareRoot" -> {
-                val live = stillWanted(control.background.changeGateIntent { privilegedActions.select() })
+                val live = stillWanted(privilegedActions.select())
                 control.background.cancelUnwantedPending()
                 async(result) { if (live()) control.background.prepareRoot(live) else cancelledSelection() }
             }
@@ -393,8 +391,7 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
                     { activity?.activity?.takeIf { live() && AppVisibility.isResumed(it) } })
             }
             "phoneSelfCheckStatus" -> control.selfCheck.status()
-            "cancelPhoneSelfCheck" -> control.selfCheck.cancel(checkNotNull(args)["runHandle"] as String)
-            else -> control.selfCheck.retryCleanup(checkNotNull(args)["runHandle"] as String)
+            else -> control.selfCheck.cancel(checkNotNull(args)["runHandle"] as String)
         }
         result.success(value)
     }

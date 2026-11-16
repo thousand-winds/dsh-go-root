@@ -6,11 +6,14 @@ fun interface PhoneShellExecutor {
                 confirm: (String, Int) -> Decision): Map<String, Any?>
 }
 
-/** A separate one-command grant: UI app/task waivers deliberately have no effect here. */
+/** A separate grant: UI app/task waivers deliberately have no effect here. */
 object PhoneAndroidShell {
     const val MAX_COMMAND_BYTES = 2048
     const val DEFAULT_TIMEOUT_MS = 30_000L
     const val MAX_TIMEOUT_MS = 60_000L
+
+    /** 本轮允许 key for shell commands (they have no target app). */
+    const val GRANT = "android-shell"
     data class Request(val command: String, val timeoutMs: Long)
 
     fun parse(args: Args): Request? {
@@ -36,9 +39,9 @@ object PhoneAndroidShell {
         "truncated" to false, "errorCode" to code,
     )
 
-    /** Shell grants are one command only; unavailable UI is not a user denial. */
+    /** Shell grants are per command; unavailable UI is not a user denial. */
     fun confirmationError(decision: Decision): String? = when (decision) {
-        Decision.ALLOW_ONCE -> null
+        Decision.ALLOW_ONCE, Decision.ALLOW_APP_FOR_TASK -> null
         Decision.UNAVAILABLE -> "confirmationUnavailable"
         Decision.STOP -> "cancelled"
         else -> "confirmationDenied"
@@ -50,8 +53,10 @@ object PhoneAndroidShell {
             rootSkipConfirmation: () -> Boolean = { false }): Map<String, Any?> {
         fun live() = tasks.isCurrent(owner) && !tasks.isPaused && enabled() && !locked() &&
             !Thread.currentThread().isInterrupted
+        // 通道未开启 / 锁屏 / 本轮已结束 refuse this one command; they never end the turn.
+        if (!enabled()) return failure("disabled")
         if (locked()) return failure("locked")
-        if (!live()) return failure("cancelled")
+        if (!tasks.isCurrent(owner) || tasks.isPaused || Thread.currentThread().isInterrupted) return failure("stopped")
         if (executor == null) return failure("unsupported")
         return executor.execute(owner.taskId, request.command, request.timeoutMs, ::live) { backend, uid ->
             if (!live()) Decision.STOP
@@ -60,16 +65,16 @@ object PhoneAndroidShell {
             else if (backend == "root" && uid == 0 && rootSkipConfirmation()) {
                 if (live()) Decision.ALLOW_ONCE else Decision.STOP
             }
+            else if (tasks.hasGrant(null, GRANT)) Decision.ALLOW_ONCE
             else {
                 val prompt = ConfirmRequest(
                     ui.get("phone_shell_confirm",
-                        "执行 Android 系统命令（%1\$s，UID %2\$s）。这可能修改系统或应用数据；屏幕操作的免确认不适用。仅允许本条命令：\n\n%3\$s",
+                        "执行 Android 系统命令（%1\$s，UID %2\$s）。这可能修改系统或应用数据；屏幕操作的免确认不适用：\n\n%3\$s",
                         backend, uid.toString(), request.command), // l10n:keep test default
-                    appLabel = null, packageName = null, firstInApp = false,
-                    offerTaskWaiver = false, owner = owner,
+                    appLabel = null, packageName = null, firstInApp = false, owner = owner,
                 )
                 val decision = scope.userWait { if (live()) gate()?.confirm(prompt) ?: Decision.UNAVAILABLE else Decision.STOP }
-                if (decision == Decision.STOP) tasks.stopIfCurrent(owner, "Android Shell 已停止") // l10n:keep agent stop reason
+                if (decision == Decision.ALLOW_APP_FOR_TASK) tasks.confirmIfCurrent(owner, grant = PhoneTasks.grantKey(null, GRANT))
                 if (live()) decision else Decision.STOP
             }
         }

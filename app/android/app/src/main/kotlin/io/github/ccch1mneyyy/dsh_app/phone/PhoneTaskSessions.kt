@@ -27,7 +27,6 @@ class PhoneTaskSessions(
         if (state.stopped) task.activeWorker?.interruptCurrent(task.tasks)
     },
     private val journal: PhoneTaskJournal? = null,
-    private val recoveryAdmission: () -> String? = { null },
     private val createBackgroundWorker: () -> SerialWorker = { SerialWorker("dsh-phone-background") },
     // Pure in-memory capability/setting snapshot. Never probe a peer or read preferences here.
     private val backgroundCapacity: () -> Int = { 1 },
@@ -193,12 +192,15 @@ class PhoneTaskSessions(
             if (attribution?.runLifecycle == 1) modernCallerSeen = true
             // l10n:keep agent resource admission
             if (selfCheck != null) return Admission(null, epoch, "本地自检正在占用手机，请稍后重试。", startedAt = startedAt)
-            if (resetting || retiring.any { it.cancelling }) return Admission(null, epoch, PhoneTasks.STOPPED_MESSAGE, startedAt = startedAt)
+            // Runtime reset / an old task still winding down refuses this one call only.
+            if (resetting || retiring.any { it.cancelling })
+                return Admission(null, epoch, "手机操控正在重置，这一条没有执行；稍后再试。", startedAt = startedAt) // l10n:keep agent reset result
             // B1 attribution alone does not prove the client can deliver an exact run end.
             val caller = attribution?.takeIf { it.runLifecycle == 1 }
             val key = Key(caller?.sessionId, caller?.runId)
             if (caller != null) {
-                if (key in endedRuns || entries[key]?.stopped == true) return Admission(null, epoch, PhoneTasks.STOPPED_MESSAGE, startedAt = startedAt)
+                if (key in endedRuns) return Admission(null, epoch, PhoneTasks.RUN_ENDED_MESSAGE, startedAt = startedAt)
+                if (entries[key]?.stopped == true) return Admission(null, epoch, PhoneTasks.STOPPED_MESSAGE, startedAt = startedAt)
                 if (caller.sessionId in stoppedSessions && !recoverScreenStop(key, screenReady && readinessEpoch == epoch))
                     return Admission(null, epoch, PhoneTasks.STOPPED_MESSAGE, startedAt = startedAt)
                 if (!reserve(key)) return Admission(null, epoch, CAPACITY_MESSAGE, startedAt = startedAt)
@@ -262,19 +264,23 @@ class PhoneTaskSessions(
             if (replay != null && (task.sessionId != replay.request.session || task.runId != replay.run))
                 return ToolOutput("路线调用身份与原准备不匹配，未执行。", isError = true) // l10n:keep replay result
             if (remainingMs(admission) <= 0) return deadlineOutput()
-            recoveryAdmission()?.let { return ToolOutput(it, isError = true) }
             journal?.refusal()?.let { return ToolOutput(it, isError = true) }
             if (replay == null) task.core.rejection(name)?.let { return it }
+            val parallelShell = name == PhoneToolCatalog.ANDROID_SHELL && task.core.shellRunsConcurrent()
             synchronized(lock) {
-                while (task.running && live(admission) && !blocked(task) && !task.closing) {
-                    val left = remainingMs(admission)
-                    if (left <= 0) return deadlineOutput()
-                    lock.wait(minOf(left, 1_000))
+                if (!parallelShell) {
+                    while (task.running && live(admission) && !blocked(task) && !task.closing) {
+                        val left = remainingMs(admission)
+                        if (left <= 0) return deadlineOutput()
+                        lock.wait(minOf(left, 1_000))
+                    }
                 }
                 if (remainingMs(admission) <= 0) return deadlineOutput()
                 if (!live(admission) || blocked(task) || task.closing) return stopped()
-                task.running = true
-                running = true
+                if (!parallelShell) {
+                    task.running = true
+                    running = true
+                }
             }
             // Legacy can start another logical task in this same record. Clean the prior
             // scope before beginning it, while this call exclusively owns the execution slot.
@@ -363,7 +369,9 @@ class PhoneTaskSessions(
             val selected = synchronized(lock) {
                 if (remainingMs(admission) <= 0) return deadlineOutput()
                 if (!live(admission) || blocked(task) || !task.tasks.isCurrent(owner)) return stopped()
-                val lane = if (PhoneScreen.BACKGROUND in call.screens) {
+                val lane = if (parallelShell) {
+                    SerialWorker("dsh-phone-shell")
+                } else if (PhoneScreen.BACKGROUND in call.screens) {
                     check(task in backgroundHolders)
                     task.backgroundWorker ?: createBackgroundWorker().also { task.backgroundWorker = it }
                 } else mainWorker
@@ -371,7 +379,14 @@ class PhoneTaskSessions(
                 executionWorker = lane
                 lane
             }
-            return task.core.call(call, selected, { remainingMs(admission) })
+            return try {
+                task.core.call(call, selected, { remainingMs(admission) })
+            } finally {
+                if (parallelShell) {
+                    synchronized(lock) { if (task.activeWorker === selected) task.activeWorker = null }
+                    selected.shutdown()
+                }
+            }
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
             return stopped()
@@ -817,6 +832,10 @@ class PhoneTaskSessions(
     fun admitEnd(sessionId: String, runId: String, completion: String = "unknown"): Task? = synchronized(lock) {
         val key = Key(sessionId, runId)
         if (!reserve(key)) throw CapacityExceeded()
+        // 停止只作用于本轮: the host just ended this run, so the next turn starts fresh and asks again.
+        stoppedSessions -= sessionId
+        screenStoppedSessions -= sessionId
+        entries.values.filter { it.sessionId == sessionId }.forEach { it.stopped = false }
         if (endedRuns.putIfAbsent(key, completion) != null) return null // First accepted classification is immutable.
         // Unknown ends fence this launch too; a late call cannot reopen them.
         val task = entries[key] ?: return null

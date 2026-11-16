@@ -8,51 +8,70 @@ import java.util.concurrent.TimeUnit
 
 /** Opt-in shell capability, independent of screen-control configuration and confirmation modes. */
 class AndroidShellController(context: Context, private val onChanged: () -> Unit = {}) {
+    private data class Config(val enabled: Boolean, val backend: String, val rootSkip: Boolean, val allowConcurrent: Boolean)
     private val context = context.applicationContext
     private val preferences = this.context.getSharedPreferences("android-shell-v1", Context.MODE_PRIVATE)
     private val guard = Any()
     private var enabled = preferences.getBoolean("enabled", false)
     private var backend = preferences.getString("backend", "shizuku").takeIf { it == "adb" || it == "shizuku" || it == "root" } ?: "shizuku"
     private var rootSkip = preferences.getBoolean("rootSkipConfirmation", false)
+    private var concurrentCommands = preferences.getBoolean("allowConcurrent", false)
     private var generation = 0L
     private var setupBusy = false
     private var active: Lease? = null
+    private val runs = ShellRuns()
+    private val isolated = mutableSetOf<Lease>()
+    /** Test seam. Production commands open a new su/adb/shizuku host per parallel run. */
+    internal var hostOpener: ((String, () -> Boolean) -> FreshHost)? = null
+    /** Test seam for the shared serial host. Production uses the fields below. */
+    internal var sharedConnector: ((String, Int?, () -> Boolean, Boolean) -> ShellConnection)? = null
     @Volatile private var readyLink: ShellLink? = null
     @Volatile private var rootFailure: String? = null
-    private val adb = ShellAdbBackend(this.context, onChanged)
-    private val shizuku = ShellShizukuBackend(this.context, onChanged)
-    private val root = ShellRootBackend(this.context, onChanged)
+    private val adb by lazy { ShellAdbBackend(context, onChanged) }
+    private val shizuku by lazy { ShellShizukuBackend(context, onChanged) }
+    private val root by lazy { ShellRootBackend(context, onChanged) }
 
-    private class Lease(val ownerId: Long, val generation: Long, val backend: String) {
+    private class Lease(
+        val ownerId: Long,
+        val generation: Long,
+        val backend: String,
+        val slot: ShellRuns.Slot,
+    ) {
         val id = UUID.randomUUID().toString()
+        val isolated: Boolean get() = !slot.serial
         @Volatile var cancelled = false
         @Volatile var link: ShellLink? = null
         var sent = false
+        var closeHost: (() -> Unit)? = null
     }
+
+    /** One parallel command's own host. Closing it does not touch any other command. */
+    internal class FreshHost(val connection: ShellConnection, val close: () -> Unit)
 
     fun status(): Map<String, Any?> {
         discardDeadRoot()
-        val config = synchronized(guard) { Triple(enabled, backend, rootSkip) }
+        val config = synchronized(guard) { Config(enabled, backend, rootSkip, concurrentCommands) }
         val shizukuStatus = shizuku.status()
         val adbStatus = adb.status()
         val failure = rootFailure
-        val link = readyLink?.takeIf { it.backend == config.second && it.alive() &&
-            (config.second != "shizuku" || shizukuStatus["granted"] == true) &&
-            (config.second != "root" || it.uid == 0) }
+            val link = readyLink?.takeIf { it.backend == config.backend && it.alive() &&
+            (config.backend != "shizuku" || shizukuStatus["granted"] == true) &&
+            (config.backend != "root" || it.uid == 0) }
         val reason = when {
-            !config.first -> "disabled"
+            !config.enabled -> "disabled"
             link != null -> null
-            config.second == "root" -> failure ?: "notConnected"
-            config.second == "shizuku" && shizukuStatus["installed"] != true -> "shizukuMissing"
-            config.second == "shizuku" && shizukuStatus["running"] != true -> "shizukuStopped"
-            config.second == "shizuku" && shizukuStatus["granted"] != true -> "permissionRequired"
-            config.second == "adb" && adbStatus["paired"] != true -> "adbNotPaired"
+            config.backend == "root" -> failure ?: "notConnected"
+            config.backend == "shizuku" && shizukuStatus["installed"] != true -> "shizukuMissing"
+            config.backend == "shizuku" && shizukuStatus["running"] != true -> "shizukuStopped"
+            config.backend == "shizuku" && shizukuStatus["granted"] != true -> "permissionRequired"
+            config.backend == "adb" && adbStatus["paired"] != true -> "adbNotPaired"
             else -> "notConnected"
         }
         return mapOf(
-            "v" to 1, "enabled" to config.first, "backend" to config.second,
-            "rootSkipConfirmation" to config.third,
-            "ready" to (config.first && link != null), "uid" to link?.uid,
+            "v" to 1, "enabled" to config.enabled, "backend" to config.backend,
+            "rootSkipConfirmation" to config.rootSkip,
+            "allowConcurrent" to config.allowConcurrent,
+            "ready" to (config.enabled && link != null), "uid" to link?.uid,
             "reasonCode" to reason, "shizuku" to shizukuStatus, "adb" to adbStatus, "root" to root.status(),
             "limits" to mapOf("defaultTimeoutMs" to ShellProtocol.DEFAULT_TIMEOUT_MS,
                 "maxTimeoutMs" to ShellProtocol.MAX_TIMEOUT_MS, "maxOutputBytes" to ShellProtocol.MAX_OUTPUT_BYTES,
@@ -62,16 +81,22 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
 
     fun configure(enabled: Boolean, backend: String): Map<String, Any?> {
         if (backend != "shizuku" && backend != "adb" && backend != "root") return mapOf("ok" to false, "errorCode" to "invalidArguments")
+        val dropped = mutableListOf<Lease>()
         val changed = synchronized(guard) {
             if (this.enabled == enabled && this.backend == backend) false else {
                 this.enabled = enabled; this.backend = backend; ++generation
                 active?.cancelled = true
+                isolated.forEach { it.cancelled = true }
+                dropped += isolated
                 readyLink = null
                 preferences.edit().putBoolean("enabled", enabled).putString("backend", backend).apply()
                 true
             }
         }
-        if (changed) { adb.disconnect(); shizuku.disconnect(); root.disconnect(); onChanged() }
+        if (changed) {
+            dropped.forEach { it.closeHost?.invoke() }
+            adb.disconnect(); shizuku.disconnect(); root.disconnect(); onChanged()
+        }
         return status() + mapOf("ok" to true, "errorCode" to null)
     }
 
@@ -88,6 +113,21 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
         }
         if (changed) onChanged()
         return status() + mapOf("ok" to true, "errorCode" to null)
+    }
+
+    /** Persisted. Turning this off does not stop commands that are already running. */
+    fun allowConcurrent(): Boolean = synchronized(guard) { concurrentCommands }
+
+    fun setAllowConcurrent(enabled: Boolean): Map<String, Any?> {
+        val changed = synchronized(guard) {
+            if (concurrentCommands == enabled) false else {
+                concurrentCommands = enabled
+                preferences.edit().putBoolean("allowConcurrent", enabled).apply()
+                true
+            }
+        }
+        if (changed) onChanged()
+        return mapOf("ok" to true, "errorCode" to null, "allowConcurrent" to enabled)
     }
 
     /**
@@ -148,18 +188,29 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
         ShellProtocol.timeoutError(timeoutMs)?.let { return ShellProtocol.failure(it) }
         val lease = synchronized(guard) {
             if (!enabled) return ShellProtocol.failure("disabled")
-            if (setupBusy || active != null) return ShellProtocol.failure("busy")
-            Lease(ownerId, generation, backend).also { active = it }
+            val slot = runs.tryBegin(ownerId, concurrent = concurrentCommands) ?: return ShellProtocol.failure("busy")
+            if (!slot.serial) {
+                Lease(ownerId, generation, backend, slot).also { isolated += it }
+            } else if (setupBusy || active != null) {
+                runs.end(slot)
+                return ShellProtocol.failure("busy")
+            } else {
+                Lease(ownerId, generation, backend, slot).also { active = it }
+            }
         }
         fun wanted(): Boolean = runCatching { stillWanted() }.getOrDefault(false) && synchronized(guard) {
-            active === lease && !lease.cancelled && enabled && generation == lease.generation && backend == lease.backend
+            !lease.cancelled && enabled && generation == lease.generation && backend == lease.backend &&
+                if (lease.isolated) lease in isolated else active === lease
         }
         var restoreInterrupt = false
         try {
             if (!wanted()) return result(lease, ShellProtocol.failure("cancelled"))
-            val connection = connection(lease.backend, null, ::wanted, startRoot = lease.backend == "root")
+            val fresh = if (lease.isolated) openFresh(lease.backend, ::wanted) else null
+            if (fresh != null) lease.closeHost = fresh.close
+            if (!wanted()) return result(lease, ShellProtocol.failure("cancelled"))
+            val connection = fresh?.connection ?: connection(lease.backend, null, ::wanted, startRoot = lease.backend == "root")
             val link = connection.link ?: run {
-                if (lease.backend == "root") rootFailure = connection.errorCode ?: "suUnavailable"
+                if (lease.backend == "root" && !lease.isolated) rootFailure = connection.errorCode ?: "suUnavailable"
                 return result(lease, ShellProtocol.failure(connection.errorCode ?: "suUnavailable"))
             }
             if (lease.backend == "root") rootFailure = null
@@ -167,14 +218,15 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
             if (!wanted()) return result(lease, ShellProtocol.failure("cancelled"))
             // Read real UID on this very channel before every confirmation, not from provider status.
             if (!link.probe()) { link.close(); return result(lease, ShellProtocol.failure("identityChanged")) }
-            readyLink = link
+            if (!lease.isolated) readyLink = link
             val decision = confirm(lease.backend, link.uid)
             if (!wanted()) return result(lease, ShellProtocol.failure("cancelled"))
             PhoneAndroidShell.confirmationError(decision)?.let { return result(lease, ShellProtocol.failure(it)) }
             var response = link.call(mapOf("op" to "start", "jobId" to lease.id,
                 "command" to command, "timeoutMs" to timeoutMs, "uid" to link.uid)) {
                 wanted() && synchronized(guard) {
-                    if (active !== lease || lease.cancelled || generation != lease.generation || !enabled) false
+                    val held = if (lease.isolated) lease in isolated else active === lease
+                    if (!held || lease.cancelled || generation != lease.generation || !enabled) false
                     else { lease.sent = true; true }
                 }
             }
@@ -202,17 +254,45 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
             lease.link?.close()
             return result(lease, ShellProtocol.failure("transportLost", started = mayHaveStarted))
         } finally {
-            synchronized(guard) { if (active === lease) active = null }
+            synchronized(guard) {
+                runs.end(lease.slot)
+                if (lease.isolated) isolated -= lease else if (active === lease) active = null
+            }
+            if (lease.isolated) lease.closeHost?.invoke()
             if (restoreInterrupt) Thread.currentThread().interrupt()
             onChanged()
         }
+    }
+
+    private fun openFresh(backend: String, wanted: () -> Boolean): FreshHost {
+        hostOpener?.let { return it(backend, wanted) }
+        val host: Any = when (backend) {
+            "adb" -> ShellAdbBackend(context) {}
+            "shizuku" -> ShellShizukuBackend(context) {}
+            "root" -> ShellRootBackend(context, {})
+            else -> return FreshHost(ShellConnection(errorCode = "invalidArguments")) {}
+        }
+        val connection = when (host) {
+            is ShellAdbBackend -> host.connect(null, wanted)
+            is ShellShizukuBackend -> host.connect(wanted)
+            is ShellRootBackend -> host.connect(wanted)
+            else -> ShellConnection(errorCode = "invalidArguments")
+        }
+        val close = {
+            when (host) {
+                is ShellAdbBackend -> host.disconnect()
+                is ShellShizukuBackend -> host.disconnect()
+                is ShellRootBackend -> host.disconnect()
+            }
+        }
+        return FreshHost(connection, close)
     }
 
     private fun result(lease: Lease, values: Map<String, Any?>): Map<String, Any?> =
         values + mapOf("backend" to lease.backend, "uid" to lease.link?.uid?.takeIf { it >= 0 })
 
     private fun connection(backend: String, port: Int?, wanted: () -> Boolean, startRoot: Boolean): ShellConnection =
-        when (backend) {
+        sharedConnector?.let { return it(backend, port, wanted, startRoot) } ?: when (backend) {
             // Each backend stays on its own transport. Root never falls through to ADB or Shizuku.
             "adb" -> adb.connect(port, wanted)
             "shizuku" -> shizuku.connect(wanted)
@@ -221,26 +301,36 @@ class AndroidShellController(context: Context, private val onChanged: () -> Unit
         }
 
     fun cancel(ownerId: Long) {
-        val lease = synchronized(guard) {
-            active?.takeIf { it.ownerId == ownerId }?.also { it.cancelled = true }
-        } ?: return
-        if (lease.link == null) {
-            when (lease.backend) {
-                "adb" -> adb.disconnect()
-                "shizuku" -> shizuku.disconnect()
-                "root" -> root.disconnect()
+        val doomed = synchronized(guard) {
+            buildList {
+                active?.takeIf { it.ownerId == ownerId }?.also { it.cancelled = true; add(it) }
+                isolated.filter { it.ownerId == ownerId }.forEach { it.cancelled = true; add(it) }
             }
-        } else cancelRemote(lease)
+        }
+        doomed.forEach(::stopLease)
     }
 
     fun cancelAll() {
-        val lease = synchronized(guard) {
+        val doomed = synchronized(guard) {
             ++generation
             readyLink = null
-            active?.also { it.cancelled = true }
+            buildList {
+                active?.also { it.cancelled = true; add(it) }
+                isolated.forEach { it.cancelled = true; add(it) }
+            }
         }
-        if (lease != null) cancelRemote(lease)
+        doomed.forEach(::stopLease)
         adb.disconnect(); shizuku.disconnect(); root.disconnect(); onChanged()
+    }
+
+    private fun stopLease(lease: Lease) {
+        if (lease.link != null) cancelRemote(lease)
+        else if (lease.isolated) lease.closeHost?.invoke()
+        else when (lease.backend) {
+            "adb" -> adb.disconnect()
+            "shizuku" -> shizuku.disconnect()
+            "root" -> root.disconnect()
+        }
     }
 
     /** A dead su process is not a connection. Drop it before any status or command reads it. */

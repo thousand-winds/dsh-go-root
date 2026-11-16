@@ -17,6 +17,7 @@ class PhoneAndroidShellTest {
         var backend = "shizuku"
         var uid = 2000
         var rootSkip = false
+        var allowConcurrent = false
         var policies = PhonePolicies()
         var decision = Decision.ALLOW_ONCE
         var beforeConfirm: () -> Unit = {}
@@ -51,6 +52,7 @@ class PhoneAndroidShellTest {
             override fun isLocked() = locked
             override fun androidShell() = executor.takeIf { backendAvailable }
             override fun androidShellRootSkipConfirmation() = rootSkip
+            override fun androidShellAllowConcurrent() = allowConcurrent
             override fun gate() = if (!gateAvailable) null else object : UserGate {
                 override fun confirm(request: ConfirmRequest): Decision {
                     asks += request
@@ -136,6 +138,16 @@ class PhoneAndroidShellTest {
         }
     }
 
+    @Test fun parallelShellDropsTheMainScreenLeaseAndSerialShellKeepsIt() {
+        Fixture().use { f ->
+            val serial = f.core.requiredScreens(PhoneToolCatalog.ANDROID_SHELL, mapOf("command" to "id"))
+            assertEquals(listOf(PhoneScreen.MAIN), (serial as Either.Right).value)
+            f.allowConcurrent = true
+            val parallel = f.core.requiredScreens(PhoneToolCatalog.ANDROID_SHELL, mapOf("command" to "id"))
+            assertEquals(emptyList<PhoneScreen>(), (parallel as Either.Right).value)
+        }
+    }
+
     @Test fun extraKeysIncludingBackendAreIgnoredAndSettingsBackendIsUsed() {
         val parsed = parse("id", mapOf("backend" to "root", "uid" to 0))
         assertNotNull(parsed)
@@ -179,7 +191,7 @@ class PhoneAndroidShellTest {
             assertTrue(ask.sentence.contains("shizuku"))
             assertTrue(ask.sentence.contains("2000"))
             assertTrue(f.tasks.isCurrent(checkNotNull(ask.owner)))
-            assertFalse(ask.offerTaskWaiver)
+            assertTrue(ask.allowRound)
             assertFalse(ask.firstInApp)
             assertNull(ask.packageName)
             assertNull(ask.appLabel)
@@ -198,7 +210,7 @@ class PhoneAndroidShellTest {
             assertTrue(ask.sentence.contains("root"))
             assertTrue(ask.sentence.contains("UID 0"))
             assertTrue(ask.sentence.endsWith(command))
-            assertFalse(ask.offerTaskWaiver)
+            assertTrue(ask.allowRound)
             assertEquals(1, f.dispatches)
         }
         Fixture().use { f ->
@@ -249,14 +261,16 @@ class PhoneAndroidShellTest {
         }
     }
 
-    @Test fun onlyAllowOnceCanAuthorizeAShellCommand() {
+    @Test fun onlyOnceOrTheShellsOwnRoundGrantCanAuthorizeACommand() {
         for (decision in Decision.entries) Fixture().use { f ->
             f.decision = decision
             val out = f.call()
-            assertEquals("decision=$decision", decision != Decision.ALLOW_ONCE, out.isError)
-            assertEquals("decision=$decision", if (decision == Decision.ALLOW_ONCE) 1 else 0, f.dispatches)
+            val allowed = decision == Decision.ALLOW_ONCE || decision == Decision.ALLOW_APP_FOR_TASK
+            assertEquals("decision=$decision", !allowed, out.isError)
+            assertEquals("decision=$decision", if (allowed) 1 else 0, f.dispatches)
             assertEquals(1, f.asks.size)
-            if (decision == Decision.STOP) assertTrue(f.tasks.isStopped())
+            // 取消这一条命令不等于停止本轮。
+            if (decision == Decision.STOP) assertFalse(f.tasks.isStopped())
         }
     }
 
@@ -269,10 +283,24 @@ class PhoneAndroidShellTest {
             repeat(2) { assertFalse(f.call().isError) }
             assertEquals(2, f.asks.size)
             assertEquals(2, f.dispatches)
-            f.decision = Decision.ALLOW_ALL_FOR_TASK
-            assertTrue(f.call().isError)
+        }
+    }
+
+    @Test fun shellRoundGrantSkipsTheSameChannelForTheRestOfTheTurnOnly() {
+        Fixture().use { f ->
+            f.decision = Decision.ALLOW_APP_FOR_TASK
+            assertFalse(f.call().isError)
+            assertEquals(1, f.asks.size)
+            assertEquals(1, f.dispatches)
+            // 本轮同一通道的后续命令不再询问。
+            assertFalse(f.call().isError)
+            assertEquals(1, f.asks.size)
             assertEquals(2, f.dispatches)
-            assertEquals(3, f.asks.size)
+            // 下一轮是新任务：重新询问。
+            f.tasks.endTask(); f.tasks.begin()
+            assertFalse(f.call().isError)
+            assertEquals(2, f.asks.size)
+            assertEquals(3, f.dispatches)
         }
     }
 
@@ -309,12 +337,14 @@ class PhoneAndroidShellTest {
         }
     }
 
-    @Test fun shellStillRejectsEveryTaskWideWaiver() {
-        for (decision in listOf(Decision.ALLOW_APP_FOR_TASK, Decision.ALLOW_ALL_FOR_TASK, Decision.ALLOW_VISUAL_FOR_TASK)) {
-            assertEquals("confirmationDenied", PhoneAndroidShell.confirmationError(decision))
+    @Test fun shellAcceptsOnlyOnceOrItsOwnRoundGrant() {
+        for (decision in listOf(Decision.ALLOW_VISUAL_FOR_TASK, Decision.DENY)) {
+            assertEquals("decision=$decision", "confirmationDenied", PhoneAndroidShell.confirmationError(decision))
         }
         assertNull(PhoneAndroidShell.confirmationError(Decision.ALLOW_ONCE))
+        assertNull(PhoneAndroidShell.confirmationError(Decision.ALLOW_APP_FOR_TASK))
         assertEquals("cancelled", PhoneAndroidShell.confirmationError(Decision.STOP))
+        assertEquals("confirmationUnavailable", PhoneAndroidShell.confirmationError(Decision.UNAVAILABLE))
     }
 
     @Test fun backendAndActualUidMustBeRecognizedBeforeAsking() {
@@ -340,7 +370,9 @@ class PhoneAndroidShellTest {
         }
         Fixture().use { f ->
             f.enabled = false
-            assertTrue(f.call().isError)
+            val out = f.call()
+            assertTrue(out.isError)
+            assertTrue(out.text.contains("手机操控已在 DSH 设置里关闭"))
             assertEquals(0, f.executorCalls)
             assertFalse(f.tasks.isActive)
         }
@@ -351,20 +383,20 @@ class PhoneAndroidShellTest {
             val owner = (f.tasks.begin() as PhoneTasks.Begin.Go).owner
             f.tasks.endTask()
             f.tasks.begin()
-            assertEquals("cancelled", f.direct(owner)["errorCode"])
+            assertEquals("stopped", f.direct(owner)["errorCode"])
             assertEquals(0, f.executorCalls)
         }
         Fixture().use { f ->
             val owner = (f.tasks.begin() as PhoneTasks.Begin.Go).owner
             f.tasks.setPaused(true)
-            assertEquals("cancelled", f.direct(owner)["errorCode"])
+            assertEquals("stopped", f.direct(owner)["errorCode"])
             assertEquals(0, f.executorCalls)
         }
         Fixture().use { f ->
             val owner = (f.tasks.begin() as PhoneTasks.Begin.Go).owner
             Thread.currentThread().interrupt()
             try {
-                assertEquals("cancelled", f.direct(owner)["errorCode"])
+                assertEquals("stopped", f.direct(owner)["errorCode"])
                 assertEquals(0, f.executorCalls)
             } finally { Thread.interrupted() }
         }
