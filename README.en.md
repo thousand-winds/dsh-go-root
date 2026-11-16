@@ -2,7 +2,7 @@
   <a href="README.md">简体中文</a> · <b>English</b>
 </p>
 
-> **Personal derivative, not an official build.** This repository, [thousand-winds/dsh-go-root](https://github.com/thousand-winds/dsh-go-root), is a personal derivative of [ccch1mneyyy/dsh-Go](https://github.com/ccch1mneyyy/dsh-Go) and is not affiliated with the upstream project. `main` imports upstream commit [`efa70c152128dfdc03e17441f3b4848ed41fbffe`](https://github.com/ccch1mneyyy/dsh-Go/commit/efa70c152128dfdc03e17441f3b4848ed41fbffe). APKs built here are on [this repository’s Releases](https://github.com/thousand-winds/dsh-go-root/releases), including [v1.0.18 arm64](https://github.com/thousand-winds/dsh-go-root/releases/tag/v1.0.18). See [README.md](README.md). The page below is the upstream English introduction.
+> **Personal derivative, not an official build.** This repository, [thousand-winds/dsh-go-root](https://github.com/thousand-winds/dsh-go-root), is a personal derivative of [ccch1mneyyy/dsh-Go](https://github.com/ccch1mneyyy/dsh-Go) and is not affiliated with the upstream project. It is synced to upstream `main` commit [`c62293a8e6b203f2dce4d32d15db11c2c8d4a254`](https://github.com/ccch1mneyyy/dsh-Go/commit/c62293a8e6b203f2dce4d32d15db11c2c8d4a254). The latest stable upstream release is [v1.1.0](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.1.0) ([`e9d3239bee18029d48618c7514303bc7fa7bbf8f`](https://github.com/ccch1mneyyy/dsh-Go/commit/e9d3239bee18029d48618c7514303bc7fa7bbf8f)). APKs built here are on [this repository’s Releases](https://github.com/thousand-winds/dsh-go-root/releases). See [README.md](README.md). The page below is the upstream English introduction.
 
 <p align="center">
   <picture>
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  An Android client for DeepSeek Harness. Run DSH right on your phone, or drive the one on your computer.
+  A mobile client for DeepSeek Harness. Android is released; iOS is in development and device testing, and currently needs a Mac build signed with your own team (<a href="app/ios/README.md">iOS project</a> · <a href="docs/architecture.md">architecture</a>).
 </p>
 
 <p align="center">
@@ -53,7 +53,7 @@
 </p>
 
 <p align="center">
-  <b>Thank you all for supporting and loving DSH Go! iOS and HarmonyOS versions are coming as soon as I can make them. The more stars, the faster they come, hehe</b>
+  <b>Thank you for supporting DSH Go! The download page currently provides Android APKs. iOS is still in development and device testing, with no public install package yet; HarmonyOS work continues too.</b>
 </p>
 
 <p align="center">
@@ -296,15 +296,15 @@ DSH_BETA_TOKEN_FILE= bash tooling/build-apk.sh --dry-run -f all
 
 | Path | Contents |
 | --- | --- |
-| `app/` | Flutter interface and Android Kotlin platform code |
+| `app/` | Flutter interface, Android Kotlin code, and iOS Swift/WidgetKit code under development |
 | `packages/dsh_client/` | Dart client for the DSH Web API |
 | `packages/dsh_remote/` | Dart client for DSH Remote |
-| `runtime/` | Linux runtime assembly, engine patches and the app bridge |
+| `runtime/` | Android Linux runtime assembly, iOS runtime specialization, engine patches and the app bridge |
 | `sdk/plugin-kit/` | Native plugin authoring kit, used from the repository and not published to npm |
 | `examples/plugins/` | Example plugins |
-| `docs/guide/`, `docs/plugins/` | User and plugin development guides |
+| `docs/guide/`, `docs/plugins/`, `docs/pets/`, `docs/live2d/` | User guides, plugin development, pet packs and Live2D companion authoring |
 | `docs/assets/` | Showcase images, pet animations and community QR codes used on this page |
-| `tooling/` | Toolchain, APK build and diagnostic scripts |
+| `tooling/` | Toolchain, Android APK/iOS development build, and diagnostic scripts |
 | `services/`, `site/`, `infra/` | Companion sharing service, website and deployment materials |
 
 ## Contribute
@@ -352,11 +352,11 @@ This project is licensed under [AGPL-3.0](LICENSE). `sdk/` and `examples/` remai
 - [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): the agent DSH Go runs and connects to.
 - [DSH-TUI](https://github.com/ccch1mneyyy/dsh-TUI): home of the mascots, Deepy and Whale girl.
 
-Code derived from Phase is used with the author's permission. DeepSeek Harness, PiPilot, DS Bot, DSH Remote and other third-party components and assets retain their own licenses and attribution. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for sources and terms.
+Code derived from Phase is used under the MIT License with the author's permission. DeepSeek Harness, PiPilot, DS Bot, DSH Remote and other third-party components and assets retain their own licenses and attribution. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for sources and terms.
 
 The DSH Go name, logo and mascots (Deepy and Whale girl) are not covered by the AGPL; see [ASSETS.md](ASSETS.md) for their terms.
 
-<sub>Remote connections draw on the [ds-harness-remote](https://github.com/liguobao/ds-harness-remote) project and its server. Thanks to its author, liguobao.</sub>
+<sub>Remote connections follow the [ds-harness-remote](https://github.com/liguobao/ds-harness-remote) (MIT) protocol; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for sources and terms.</sub>
 
 <br>
 
