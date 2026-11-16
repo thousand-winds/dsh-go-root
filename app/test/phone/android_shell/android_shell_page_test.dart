@@ -443,6 +443,26 @@ void main() {
     expect(find.byKey(const ValueKey('android-shell-root-skip')), findsNothing);
   });
 
+  testWidgets('concurrent commands are opt-in and turning the switch off asks for nothing', (tester) async {
+    final native = await _pump(tester, native: ShellNative(status: shellStatus(enabled: true, reasonCode: null)));
+    expect(find.text(appL10n.androidShellAllowConcurrent), findsOneWidget);
+    expect(tester.widget<Switch>(find.byKey(const ValueKey('android-shell-concurrent-switch'))).value, isFalse);
+    await _tap(tester, 'android-shell-concurrent-switch');
+    final notice = tester.widget<RiskNoticeSheet>(find.byType(RiskNoticeSheet)).notice;
+    expect(notice.id, 'phone.android-shell.concurrent');
+    expect(notice.title, appL10n.androidShellAllowConcurrentRiskTitle);
+    expect(native.callsOf('setAndroidShellAllowConcurrent'), isEmpty);
+    await tester.tap(find.descendant(of: find.byType(SheetHeader), matching: find.byType(SheetIconButton)));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Switch>(find.byKey(const ValueKey('android-shell-concurrent-switch'))).value, isFalse);
+    await _tap(tester, 'android-shell-concurrent-switch');
+    await _tap(tester, 'risk-confirm');
+    expect(native.callsOf('setAndroidShellAllowConcurrent').single.arguments, {'enabled': true});
+    await _tap(tester, 'android-shell-concurrent-switch');
+    expect(find.byType(RiskNoticeSheet), findsNothing);
+    expect(native.callsOf('setAndroidShellAllowConcurrent').last.arguments, {'enabled': false});
+  });
+
   test('stable errors are friendly in both languages and unknown codes fail safely', () {
     for (final locale in [AppLocale.zhCN, AppLocale.en]) {
       final l10n = lookupL10n(locale);

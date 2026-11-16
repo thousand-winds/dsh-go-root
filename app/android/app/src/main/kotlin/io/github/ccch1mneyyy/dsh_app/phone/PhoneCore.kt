@@ -27,6 +27,8 @@ interface PhoneEnv {
     fun androidShell(): PhoneShellExecutor? = null
     /** Root Android Shell only. Screen-control waivers never set this. */
     fun androidShellRootSkipConfirmation(): Boolean = false
+    /** Android Shell execution only. Screen taps stay on the shared serial worker. */
+    fun androidShellAllowConcurrent(): Boolean = false
     fun uiText(): PhoneUiText = PhoneUiText.DEFAULT
     fun zone(): ZoneId
     /** Tells the person what to fix (accessibility off, …); at most once per task and kind. */
@@ -236,6 +238,8 @@ class PhoneCore(
             is Either.Right -> result
         }
     }
+
+    internal fun shellRunsConcurrent(): Boolean = env.androidShellAllowConcurrent()
 
     internal fun call(prepared: PreparedCall, executionWorker: SerialWorker, remainingMs: () -> Long = { MAX_TOTAL_MS }): ToolOutput =
         runCall(prepared.name, prepared.args, AtomicReference<PhoneTasks.Owner?>(prepared.owner), prepared, executionWorker, remainingMs)
@@ -832,7 +836,10 @@ class PhoneCore(
                 listOf(PhoneScreen.MAIN, PhoneScreen.BACKGROUND) else listOf(PhoneScreen.MAIN))
             PhoneToolCatalog.SCREEN -> Either.Right(listOf(if (a.bool("background") == true) PhoneScreen.BACKGROUND else PhoneScreen.MAIN))
             // Arbitrary system commands take the main/global unknown-app lease, without reading a screen.
-            PhoneToolCatalog.INTENT, PhoneToolCatalog.ANDROID_SHELL -> Either.Right(listOf(PhoneScreen.MAIN))
+            // Parallel shell commands opt out of that lease so another session is not held for 30 seconds.
+            PhoneToolCatalog.INTENT -> Either.Right(listOf(PhoneScreen.MAIN))
+            PhoneToolCatalog.ANDROID_SHELL -> Either.Right(
+                if (env.androidShellAllowConcurrent()) emptyList() else listOf(PhoneScreen.MAIN))
             PhoneToolCatalog.HANDOFF -> Either.Right(if (lastScreen == PhoneScreen.BACKGROUND)
                 listOf(PhoneScreen.MAIN, PhoneScreen.BACKGROUND) else listOf(PhoneScreen.MAIN))
             PhoneToolCatalog.TAP, PhoneToolCatalog.TYPE, PhoneToolCatalog.SCROLL, PhoneToolCatalog.TAP_XY,

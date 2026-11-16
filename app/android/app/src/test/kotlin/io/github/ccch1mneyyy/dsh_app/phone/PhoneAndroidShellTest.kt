@@ -17,6 +17,7 @@ class PhoneAndroidShellTest {
         var backend = "shizuku"
         var uid = 2000
         var rootSkip = false
+        var allowConcurrent = false
         var policies = PhonePolicies()
         var decision = Decision.ALLOW_ONCE
         var beforeConfirm: () -> Unit = {}
@@ -51,6 +52,7 @@ class PhoneAndroidShellTest {
             override fun isLocked() = locked
             override fun androidShell() = executor.takeIf { backendAvailable }
             override fun androidShellRootSkipConfirmation() = rootSkip
+            override fun androidShellAllowConcurrent() = allowConcurrent
             override fun gate() = if (!gateAvailable) null else object : UserGate {
                 override fun confirm(request: ConfirmRequest): Decision {
                     asks += request
@@ -133,6 +135,16 @@ class PhoneAndroidShellTest {
             }
             assertEquals(0, f.executorCalls)
             assertTrue(f.asks.isEmpty())
+        }
+    }
+
+    @Test fun parallelShellDropsTheMainScreenLeaseAndSerialShellKeepsIt() {
+        Fixture().use { f ->
+            val serial = f.core.requiredScreens(PhoneToolCatalog.ANDROID_SHELL, mapOf("command" to "id"))
+            assertEquals(listOf(PhoneScreen.MAIN), (serial as Either.Right).value)
+            f.allowConcurrent = true
+            val parallel = f.core.requiredScreens(PhoneToolCatalog.ANDROID_SHELL, mapOf("command" to "id"))
+            assertEquals(emptyList<PhoneScreen>(), (parallel as Either.Right).value)
         }
     }
 

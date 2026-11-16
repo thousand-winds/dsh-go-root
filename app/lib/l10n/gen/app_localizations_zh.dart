@@ -1720,6 +1720,23 @@ class L10nZh extends L10n {
   String get androidShellRootSkipRiskAction => '始终免确认';
 
   @override
+  String get androidShellAllowConcurrent => '允许多条命令同时运行';
+
+  @override
+  String get androidShellAllowConcurrentHint =>
+      '默认关闭，一次只跑一条命令。打开后，不同对话的 Android Shell 命令可以同时执行，不再互相等待或返回 busy。命令之间可能互相干扰。这不绕过 Root 授权、每条命令的确认，也不关掉权限开关。关闭后，已经在跑的命令会继续跑完，之后的命令恢复一次只能跑一条。';
+
+  @override
+  String get androidShellAllowConcurrentRiskTitle => '允许多条命令同时运行？';
+
+  @override
+  String get androidShellAllowConcurrentRiskBody =>
+      '打开后，不同对话可以同时执行 Android Shell。本应用不会检查这些命令会不会互相覆盖文件或抢同一个资源。Root、ADB 和 Shizuku 的授权与确认仍然有效。关闭这个开关不会中断已经开始的命令。';
+
+  @override
+  String get androidShellAllowConcurrentRiskAction => '允许多条同时运行';
+
+  @override
   String get androidShellInstalled => 'Shizuku 已安装';
 
   @override

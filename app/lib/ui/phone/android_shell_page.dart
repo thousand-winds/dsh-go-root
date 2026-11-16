@@ -158,6 +158,25 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
     return _channel.setRootSkip(enabled);
   });
 
+  /// Does not stop a command that has already started.
+  Future<void> _setAllowConcurrent(bool enabled) => _run(() async {
+    if (enabled) {
+      final l10n = context.l10n;
+      final accepted = await confirmRisk(
+        context,
+        RiskNotice(
+          id: 'phone.android-shell.concurrent',
+          level: RiskLevel.high,
+          title: l10n.androidShellAllowConcurrentRiskTitle,
+          body: l10n.androidShellAllowConcurrentRiskBody,
+          action: l10n.androidShellAllowConcurrentRiskAction,
+        ),
+      );
+      if (!accepted || !mounted) return const AndroidShellResult(true);
+    }
+    return _channel.setAllowConcurrent(enabled);
+  });
+
   Future<void> _selectBackend(AndroidShellBackend backend) => _run(() async {
     if (backend == AndroidShellBackend.root) {
       final accepted = await confirmRisk(
@@ -308,6 +327,23 @@ class _AndroidShellPageState extends ConsumerState<AndroidShellPage> {
                   onTap: !canSetup || _status.backend == backend ? null : () => unawaited(_selectBackend(backend)),
                 ),
               ),
+          ],
+        ),
+        ListPageCard(
+          margin: _margin,
+          children: [
+            ListPageRow(
+              key: const ValueKey('android-shell-concurrent'),
+              title: l10n.androidShellAllowConcurrent,
+              titleMaxLines: 2,
+              subtitle: l10n.androidShellAllowConcurrentHint,
+              subtitleMaxLines: 8,
+              trailing: Switch(
+                key: const ValueKey('android-shell-concurrent-switch'),
+                value: _status.allowConcurrent,
+                onChanged: canSetup ? (value) => unawaited(_setAllowConcurrent(value)) : null,
+              ),
+            ),
           ],
         ),
         if (root)

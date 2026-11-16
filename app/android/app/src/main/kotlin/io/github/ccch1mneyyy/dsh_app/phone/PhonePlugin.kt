@@ -209,6 +209,13 @@ class PhonePlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandle
                     result.success(mapOf("ok" to false, "errorCode" to "invalidArguments"))
                 } else async(result, shortControl = true) { control.shell.setRootSkipConfirmation(enabled) }
             }
+            "setAndroidShellAllowConcurrent" -> {
+                val args = call.arguments as? Map<*, *>
+                val enabled = args?.get("enabled") as? Boolean
+                if (args?.keys != setOf("enabled") || enabled == null) {
+                    result.success(mapOf("ok" to false, "errorCode" to "invalidArguments"))
+                } else async(result, shortControl = true) { control.shell.setAllowConcurrent(enabled) }
+            }
             "androidShellRequestPermission" -> async(result) { control.shell.requestShizukuPermission() }
             "androidShellStartPairing" -> async(result) { control.shell.startAdbPairing() }
             "androidShellPair" -> {

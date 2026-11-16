@@ -1806,6 +1806,23 @@ class L10nEn extends L10n {
   String get androidShellRootSkipRiskAction => 'Always skip confirmation';
 
   @override
+  String get androidShellAllowConcurrent => 'Allow commands to run at the same time';
+
+  @override
+  String get androidShellAllowConcurrentHint =>
+      'Off by default, so only one command runs. When on, Android Shell commands from different sessions run at the same time instead of waiting or returning busy. Commands can interfere with each other. This does not skip Root authorization, per-command confirmation, or the permission switches. Turning it off lets commands that already started finish; later commands run one at a time again.';
+
+  @override
+  String get androidShellAllowConcurrentRiskTitle => 'Allow commands to run at the same time?';
+
+  @override
+  String get androidShellAllowConcurrentRiskBody =>
+      'Android Shell commands from different sessions can then run together. The app does not check whether those commands overwrite each other\'s files or contend for the same resource. Root, ADB, and Shizuku authorization and confirmation still apply. Turning this off does not stop a command that has already started.';
+
+  @override
+  String get androidShellAllowConcurrentRiskAction => 'Allow commands together';
+
+  @override
   String get androidShellInstalled => 'Shizuku installed';
 
   @override

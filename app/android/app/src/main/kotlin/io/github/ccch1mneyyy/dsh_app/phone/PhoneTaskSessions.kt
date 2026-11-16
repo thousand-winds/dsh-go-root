@@ -266,16 +266,21 @@ class PhoneTaskSessions(
             if (remainingMs(admission) <= 0) return deadlineOutput()
             journal?.refusal()?.let { return ToolOutput(it, isError = true) }
             if (replay == null) task.core.rejection(name)?.let { return it }
+            val parallelShell = name == PhoneToolCatalog.ANDROID_SHELL && task.core.shellRunsConcurrent()
             synchronized(lock) {
-                while (task.running && live(admission) && !blocked(task) && !task.closing) {
-                    val left = remainingMs(admission)
-                    if (left <= 0) return deadlineOutput()
-                    lock.wait(minOf(left, 1_000))
+                if (!parallelShell) {
+                    while (task.running && live(admission) && !blocked(task) && !task.closing) {
+                        val left = remainingMs(admission)
+                        if (left <= 0) return deadlineOutput()
+                        lock.wait(minOf(left, 1_000))
+                    }
                 }
                 if (remainingMs(admission) <= 0) return deadlineOutput()
                 if (!live(admission) || blocked(task) || task.closing) return stopped()
-                task.running = true
-                running = true
+                if (!parallelShell) {
+                    task.running = true
+                    running = true
+                }
             }
             // Legacy can start another logical task in this same record. Clean the prior
             // scope before beginning it, while this call exclusively owns the execution slot.
@@ -364,7 +369,9 @@ class PhoneTaskSessions(
             val selected = synchronized(lock) {
                 if (remainingMs(admission) <= 0) return deadlineOutput()
                 if (!live(admission) || blocked(task) || !task.tasks.isCurrent(owner)) return stopped()
-                val lane = if (PhoneScreen.BACKGROUND in call.screens) {
+                val lane = if (parallelShell) {
+                    SerialWorker("dsh-phone-shell")
+                } else if (PhoneScreen.BACKGROUND in call.screens) {
                     check(task in backgroundHolders)
                     task.backgroundWorker ?: createBackgroundWorker().also { task.backgroundWorker = it }
                 } else mainWorker
@@ -372,7 +379,14 @@ class PhoneTaskSessions(
                 executionWorker = lane
                 lane
             }
-            return task.core.call(call, selected, { remainingMs(admission) })
+            return try {
+                task.core.call(call, selected, { remainingMs(admission) })
+            } finally {
+                if (parallelShell) {
+                    synchronized(lock) { if (task.activeWorker === selected) task.activeWorker = null }
+                    selected.shutdown()
+                }
+            }
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
             return stopped()

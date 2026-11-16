@@ -3254,6 +3254,36 @@ abstract class L10n {
   /// **'始终免确认'**
   String get androidShellRootSkipRiskAction;
 
+  /// No description provided for @androidShellAllowConcurrent.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许多条命令同时运行'**
+  String get androidShellAllowConcurrent;
+
+  /// No description provided for @androidShellAllowConcurrentHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认关闭，一次只跑一条命令。打开后，不同对话的 Android Shell 命令可以同时执行，不再互相等待或返回 busy。命令之间可能互相干扰。这不绕过 Root 授权、每条命令的确认，也不关掉权限开关。关闭后，已经在跑的命令会继续跑完，之后的命令恢复一次只能跑一条。'**
+  String get androidShellAllowConcurrentHint;
+
+  /// No description provided for @androidShellAllowConcurrentRiskTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许多条命令同时运行？'**
+  String get androidShellAllowConcurrentRiskTitle;
+
+  /// No description provided for @androidShellAllowConcurrentRiskBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开后，不同对话可以同时执行 Android Shell。本应用不会检查这些命令会不会互相覆盖文件或抢同一个资源。Root、ADB 和 Shizuku 的授权与确认仍然有效。关闭这个开关不会中断已经开始的命令。'**
+  String get androidShellAllowConcurrentRiskBody;
+
+  /// No description provided for @androidShellAllowConcurrentRiskAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许多条同时运行'**
+  String get androidShellAllowConcurrentRiskAction;
+
   /// No description provided for @androidShellInstalled.
   ///
   /// In zh, this message translates to:

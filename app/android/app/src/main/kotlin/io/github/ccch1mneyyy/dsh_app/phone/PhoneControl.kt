@@ -1013,6 +1013,8 @@ class PhoneControl private constructor(private val app: Context) : PhoneEnv, Con
 
     override fun androidShellRootSkipConfirmation(): Boolean = shell.rootSkipConfirmation()
 
+    override fun androidShellAllowConcurrent(): Boolean = shell.allowConcurrent()
+
     override fun zone(): ZoneId = ZoneId.systemDefault()
 
     override fun notifyFix(kind: String) = notifyFixFor(tasks, kind)
