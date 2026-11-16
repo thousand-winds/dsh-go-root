@@ -7,7 +7,7 @@ import {
 } from '@ohos/flutter_ohos';
 
 const DEFAULT_ICON: string = 'mist';
-const ALTERNATE_ICONS: string[] = ['night', 'frost', 'ink'];
+const ALTERNATE_ICONS: string[] = ['night', 'frost', 'ink', 'whale'];
 // 取消备用图标时本来就没有启用的：已经是默认图标。
 const NO_ALTERNATE_ENABLED: number = 17700309;
 

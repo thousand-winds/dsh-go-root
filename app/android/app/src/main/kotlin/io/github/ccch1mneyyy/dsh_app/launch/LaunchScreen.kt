@@ -140,6 +140,7 @@ object LaunchScreen {
         "ic_launcher_night" -> R.mipmap.ic_launcher_night
         "ic_launcher_frost" -> R.mipmap.ic_launcher_frost
         "ic_launcher_ink" -> R.mipmap.ic_launcher_ink
+        "ic_launcher_whale" -> R.mipmap.ic_launcher_whale
         else -> R.mipmap.ic_launcher
     }
 
