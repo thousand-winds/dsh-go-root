@@ -476,6 +476,7 @@ void main() {
         'adbNotPaired',
         'connectFailed',
         'identityChanged',
+        'helperStartFailed',
         'busy',
         'invalidArguments',
         'cancelled',

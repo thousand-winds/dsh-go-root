@@ -1939,6 +1939,9 @@ class L10nEn extends L10n {
   String get androidShellErrorIdentityChanged => 'The channel identity changed. Stop, then authorize or connect again.';
 
   @override
+  String get androidShellErrorHelperStartFailed => 'The Android Shell helper failed to start. The command did not run.';
+
+  @override
   String get androidShellErrorBusy => 'Another operation is still pending. Retry later or stop Android Shell first.';
 
   @override
@@ -10786,6 +10789,15 @@ class L10nEn extends L10n {
   String get marketInstallRefused => 'This engine can\'t install market plugins';
 
   @override
+  String get localEnvChooseUseTitle => 'How will you use dsh-Go?';
+
+  @override
+  String get localEnvTavernTitle => 'Chat with characters';
+
+  @override
+  String get localEnvTavernDetail => 'Bring DeepSeek chats over here too · nothing to install';
+
+  @override
   String get marketSectionOfficial => 'Official';
 
   @override
@@ -12699,6 +12711,13 @@ class L10nEn extends L10n {
 
   @override
   String get phoneFailureLaunchHint => 'Check the logs, or connect to a remote host to continue';
+
+  @override
+  String get phoneFailureTawcHint =>
+      'PRoot couldn’t run the local engine. Try starting with tawcroot to use your existing runtime and data.';
+
+  @override
+  String get phoneFailureRetryWithTawcroot => 'Start with tawcroot';
 
   @override
   String get phoneFailureNoSpaceHint => 'Free up some space and try again';
@@ -21554,7 +21573,7 @@ class L10nEn extends L10n {
   String get tavernEmptyTitle => 'No characters yet';
 
   @override
-  String get tavernEmptyMessage => 'Import a character card: PNG, JSON or CHARX';
+  String get tavernEmptyMessage => 'Bring a chat over from DeepSeek, or import a character card';
 
   @override
   String get tavernContinue => 'Continue';
@@ -24071,6 +24090,12 @@ class L10nEn extends L10n {
   }
 
   @override
+  String get tavernMvuIssues => 'This card\'s variables hit a problem';
+
+  @override
+  String get tavernMvuUnfinished => 'This message\'s variables were not fully updated; its text is kept';
+
+  @override
   String get tavernRegexEdit => 'Edit rule';
 
   @override
@@ -25067,6 +25092,58 @@ class L10nEn extends L10n {
 
   @override
   String get tavernDraftTrialUnsupported => 'This draft can\'t be tried yet';
+
+  @override
+  String get tavernImportFromDeepSeek => 'Bring over from DeepSeek';
+
+  @override
+  String get tavernImportFromDeepSeekSubtitle => 'Export all chats in DeepSeek\'s settings, then pick that ZIP';
+
+  @override
+  String get tavernDeepSeekTitle => 'Bring chats over from DeepSeek';
+
+  @override
+  String tavernDeepSeekFound(int count) {
+    return '$count chats found, the longest first. Tick the ones to continue.';
+  }
+
+  @override
+  String tavernDeepSeekMessages(int count) {
+    return '$count messages';
+  }
+
+  @override
+  String get tavernDeepSeekUntitled => 'Untitled chat';
+
+  @override
+  String get tavernDeepSeekAlready => 'Already here; tap to open';
+
+  @override
+  String tavernDeepSeekMore(int count) {
+    return 'Show more ($count left)';
+  }
+
+  @override
+  String tavernDeepSeekTake(int count) {
+    return 'Bring over ($count)';
+  }
+
+  @override
+  String get tavernDeepSeekTaking => 'Bringing over…';
+
+  @override
+  String get tavernDeepSeekNotExport => 'This isn\'t a DeepSeek chat export';
+
+  @override
+  String get tavernDeepSeekNotExportMessage => 'Pick the ZIP DeepSeek gives you when you export all chats';
+
+  @override
+  String get tavernDeepSeekFailed => 'Couldn\'t bring it over; try again';
+
+  @override
+  String tavernDeepSeekTaken(int count) {
+    return '$count chats brought over; the rest are in the chat list';
+  }
 
   @override
   String get tavernPacks => 'Gameplay packs';

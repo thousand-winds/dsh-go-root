@@ -7,11 +7,11 @@
 当前同步到上游 `main` 的这一版：
 
 - 仓库：https://github.com/ccch1mneyyy/dsh-Go
-- 提交：[`c62293a8e6b203f2dce4d32d15db11c2c8d4a254`](https://github.com/ccch1mneyyy/dsh-Go/commit/c62293a8e6b203f2dce4d32d15db11c2c8d4a254)
-- 说明：fix(ios): adapt shared runtime checks after HarmonyOS merge
-- 日期：2026-11-16
+- 提交：[`9ad11167c53a5da12ff8791c21f4327f5d8a9a25`](https://github.com/ccch1mneyyy/dsh-Go/commit/9ad11167c53a5da12ff8791c21f4327f5d8a9a25)
+- 说明：Merge pull request #1545 from ccch1mneyyy/codex/zhuoyitong-engine-recovery
+- 日期：2026-11-19
 
-最新稳定发布是 [v1.1.0](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.1.0)，对应提交 [`e9d3239bee18029d48618c7514303bc7fa7bbf8f`](https://github.com/ccch1mneyyy/dsh-Go/commit/e9d3239bee18029d48618c7514303bc7fa7bbf8f)（2026-11-15）。上面的 `main` 提交已经包含这次发布，以及其后合入 `main` 的改动。本仓库应用版本名跟随上游，为 1.1.0。
+最新稳定发布是 [v1.2.0](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.2.0)，对应提交 [`c1a84e3f833ad59ff07a5027994dae3935907a2d`](https://github.com/ccch1mneyyy/dsh-Go/commit/c1a84e3f833ad59ff07a5027994dae3935907a2d)（2026-11-18）。上面的 `main` 提交比这个 tag 超前 8 个提交。本仓库应用版本名跟随上游，为 1.2.0。
 
 此前导入过的 [`efa70c152128dfdc03e17441f3b4848ed41fbffe`](https://github.com/ccch1mneyyy/dsh-Go/commit/efa70c152128dfdc03e17441f3b4848ed41fbffe) 已不在上游当前 `main` 历史上。这次同步以现在的上游 `main` 为准。
 
@@ -41,6 +41,6 @@
 
 This repository is a personal derivative of [ccch1mneyyy/dsh-Go](https://github.com/ccch1mneyyy/dsh-Go). It is not an official DSH Go build and is not affiliated with the upstream project.
 
-Synced upstream `main`: [`c62293a8e6b203f2dce4d32d15db11c2c8d4a254`](https://github.com/ccch1mneyyy/dsh-Go/commit/c62293a8e6b203f2dce4d32d15db11c2c8d4a254). The latest stable upstream release is [v1.1.0](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.1.0) at [`e9d3239bee18029d48618c7514303bc7fa7bbf8f`](https://github.com/ccch1mneyyy/dsh-Go/commit/e9d3239bee18029d48618c7514303bc7fa7bbf8f). `LICENSE` and `THIRD_PARTY_NOTICES.md` from upstream are kept. Modifications here are also under AGPL-3.0.
+Synced upstream `main`: [`9ad11167c53a5da12ff8791c21f4327f5d8a9a25`](https://github.com/ccch1mneyyy/dsh-Go/commit/9ad11167c53a5da12ff8791c21f4327f5d8a9a25). The latest stable upstream release is [v1.2.0](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.2.0) at [`c1a84e3f833ad59ff07a5027994dae3935907a2d`](https://github.com/ccch1mneyyy/dsh-Go/commit/c1a84e3f833ad59ff07a5027994dae3935907a2d). That `main` commit is 8 commits ahead of the tag. The app version name here tracks upstream and is 1.2.0. `LICENSE` and `THIRD_PARTY_NOTICES.md` from upstream are kept. Modifications here are also under AGPL-3.0.
 
 `applicationId` is `io.github.thousandwinds.dshgo`. The Kotlin namespace stays `io.github.ccch1mneyyy.dsh_app`. APKs are fork-signed with the same key as this repository’s earlier releases, so a newer build can replace an older install of this package. Official in-app updates do not apply. Download APKs from this repository’s [GitHub Releases](https://github.com/thousand-winds/dsh-go-root/releases). KernelSU Root Android Shell is opt-in, requires UID 0, has a Root-only “始终免确认” switch, and reconnects only after Root was already enabled. It does not persist a temporary root.

@@ -1846,6 +1846,9 @@ class L10nZh extends L10n {
   String get androidShellErrorIdentityChanged => '通道身份已改变，请停止后重新授权或连接。';
 
   @override
+  String get androidShellErrorHelperStartFailed => 'Android Shell 辅助进程未能启动，命令未执行。';
+
+  @override
   String get androidShellErrorBusy => '另一项操作尚未结束，请稍后重试，或先停止 Android Shell。';
 
   @override
@@ -10224,6 +10227,15 @@ class L10nZh extends L10n {
   String get marketInstallRefused => '这个引擎不能安装市场插件';
 
   @override
+  String get localEnvChooseUseTitle => '想怎么用 dsh-Go？';
+
+  @override
+  String get localEnvTavernTitle => '和角色聊天';
+
+  @override
+  String get localEnvTavernDetail => '接回 DeepSeek 的对话也在这里 · 不用安装';
+
+  @override
   String get marketSectionOfficial => '官方';
 
   @override
@@ -12074,6 +12086,12 @@ class L10nZh extends L10n {
 
   @override
   String get phoneFailureLaunchHint => '查看日志了解原因，或连接远程主机继续使用';
+
+  @override
+  String get phoneFailureTawcHint => 'PRoot 无法执行本机引擎。可以尝试用 tawcroot 启动，继续使用已有的运行环境和数据。';
+
+  @override
+  String get phoneFailureRetryWithTawcroot => '用 tawcroot 启动';
 
   @override
   String get phoneFailureNoSpaceHint => '清理一些空间后重试';
@@ -20423,7 +20441,7 @@ class L10nZh extends L10n {
   String get tavernEmptyTitle => '还没有角色';
 
   @override
-  String get tavernEmptyMessage => '导入一张角色卡：PNG、JSON 或 CHARX';
+  String get tavernEmptyMessage => '接回 DeepSeek 里的对话，或导入一张角色卡';
 
   @override
   String get tavernContinue => '继续';
@@ -22812,6 +22830,12 @@ class L10nZh extends L10n {
   }
 
   @override
+  String get tavernMvuIssues => '这张卡的变量更新有问题';
+
+  @override
+  String get tavernMvuUnfinished => '这一层的变量没有更新完，正文已经保留';
+
+  @override
   String get tavernRegexEdit => '编辑规则';
 
   @override
@@ -23788,6 +23812,58 @@ class L10nZh extends L10n {
 
   @override
   String get tavernDraftTrialUnsupported => '这份草稿暂时没法试玩';
+
+  @override
+  String get tavernImportFromDeepSeek => '从 DeepSeek 接回来';
+
+  @override
+  String get tavernImportFromDeepSeekSubtitle => '在 DeepSeek 的设置里导出全部历史对话，再选那个 ZIP';
+
+  @override
+  String get tavernDeepSeekTitle => '接回 DeepSeek 的对话';
+
+  @override
+  String tavernDeepSeekFound(int count) {
+    return '找到 $count 段对话，聊得最多的排在前面。勾上想接着聊的。';
+  }
+
+  @override
+  String tavernDeepSeekMessages(int count) {
+    return '$count 条';
+  }
+
+  @override
+  String get tavernDeepSeekUntitled => '没有标题的对话';
+
+  @override
+  String get tavernDeepSeekAlready => '已经接回来了，点开继续';
+
+  @override
+  String tavernDeepSeekMore(int count) {
+    return '显示更多（还有 $count 段）';
+  }
+
+  @override
+  String tavernDeepSeekTake(int count) {
+    return '接回来（$count）';
+  }
+
+  @override
+  String get tavernDeepSeekTaking => '正在接回…';
+
+  @override
+  String get tavernDeepSeekNotExport => '这不是 DeepSeek 导出的对话';
+
+  @override
+  String get tavernDeepSeekNotExportMessage => '要选在 DeepSeek 里导出全部历史对话后得到的那个 ZIP';
+
+  @override
+  String get tavernDeepSeekFailed => '没接回来，再试一次';
+
+  @override
+  String tavernDeepSeekTaken(int count) {
+    return '接回了 $count 段，其余的在对话列表里';
+  }
 
   @override
   String get tavernPacks => '玩法包';
