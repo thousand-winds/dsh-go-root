@@ -153,6 +153,8 @@ class RuntimeController private constructor(private val app: Context) : DshProce
         "tawcEngineEnabled" to tawcEngine().enabled,
         "tawcEngineAvailable" to (tawcEngineUnavailable() == null),
         "tawcEngineActive" to (process?.executionMode == "tawcroot"),
+        "tawcRecoveryAvailable" to (failure?.prootCompatibilityFailure == true && !currentModeSafe() &&
+            !prefs.getBoolean(K_TAWC_ENGINE, false) && tawcEngineUnavailable() == null),
         "currentExecutionMode" to process?.executionMode,
         "launchSelectedMode" to lastLaunch?.selectedMode,
         "launchSpawned" to (lastLaunch?.spawned == true),
@@ -581,7 +583,10 @@ class RuntimeController private constructor(private val app: Context) : DshProce
                 p.start(env, if (storage) PhoneStorage.binds() else emptyList(), safe, phone, direct.requested, direct.failed, searchOverlay, authOverlay, speechOverlay,
                     tawcEngine = tawc.saved == true, tawcFailed = tawc.failed) { actualDirect ->
                     // SafeMode.prepare writes its own briefing; leave the original home untouched.
-                    if (!safe) GuestSetup.writeAgentsMd(installer.rootfs, storage, phone && PhoneControl.switchedOn(app), pendingVisualReplies, actualDirect)
+                    if (!safe) GuestSetup.writeAgentsMd(
+                        installer.rootfs, storage, phone && PhoneControl.switchedOn(app), pendingVisualReplies, actualDirect,
+                        nativeLocale = if (AppStrings.isEnglish(app)) "en" else "zh-CN",
+                    )
                 }
                 if (phone) PhoneControl.get(app).launched(p.phoneMounted)
             } catch (e: Throwable) {
@@ -965,6 +970,7 @@ class RuntimeController private constructor(private val app: Context) : DshProce
                 recent = list("recent"),
                 diagnostics = if (json.isNull("diagnostics")) null else json.optString("diagnostics"),
                 upSeconds = if (json.isNull("upSeconds")) null else json.optLong("upSeconds"),
+                prootCompatibilityFailure = json.optBoolean("prootCompatibilityFailure"),
             )
         }
     } catch (_: Exception) {
@@ -1093,7 +1099,11 @@ class RuntimeController private constructor(private val app: Context) : DshProce
                 restartNow("with compatible launch")
                 return
             }
-            if (!runSafe) f = f.copy(recent = recentChanges())
+            if (!runSafe) f = f.copy(
+                recent = recentChanges(),
+                prootCompatibilityFailure = source.launchDiagnostics.selectedMode == "proot" &&
+                    CrashClassifier.isProotCompatibilityFailure(f, tail),
+            )
             val outcome = SafePolicy.onFailure(safeState, strikes, f, autoSafe(),
                 AppStrings.get(app, R.string.safe_probation_failed), AppStrings.get(app, R.string.safe_auto_started))
             val now = SystemClock.elapsedRealtime()
