@@ -1994,6 +1994,80 @@ class L10nEn extends L10n {
       'The outcome could not be confirmed. Verify it first; never automatically retry a dispatched command.';
 
   @override
+  String get backgroundProtectionDescription =>
+      'Off by default. Protection is attempted only while local tasks are active and the app is in the background; the system may still pause them.';
+
+  @override
+  String get backgroundProtectionAudio => 'Silent audio protection';
+
+  @override
+  String get backgroundProtectionAudioHint =>
+      'Plays silent audio in the background during tasks, using more battery. Does not take over recording, calls, or speech playback.';
+
+  @override
+  String get backgroundProtectionLocation => 'Background location protection';
+
+  @override
+  String get backgroundProtectionLocationHint =>
+      'Requires “Always” location access, uses more battery, and involves location privacy. Coordinates are not saved.';
+
+  @override
+  String get backgroundProtectionTask => 'Continuous task protection';
+
+  @override
+  String get backgroundProtectionTaskHint =>
+      'Requests a system continuous task only during local tasks. Availability depends on this build and system approval.';
+
+  @override
+  String get backgroundProtectionStatus => 'Current status';
+
+  @override
+  String get backgroundProtectionOff => 'Enhanced protection is off';
+
+  @override
+  String get backgroundProtectionReady =>
+      'Enabled, but not running now. Protection is attempted only during local tasks in the background.';
+
+  @override
+  String get backgroundProtectionAudioActive => 'Silent audio protection is running';
+
+  @override
+  String get backgroundProtectionLocationActive => 'Background location protection is running';
+
+  @override
+  String get backgroundProtectionBothActive => 'Silent audio and background location protection are running';
+
+  @override
+  String get backgroundProtectionTaskActive => 'System continuous task protection is running';
+
+  @override
+  String get backgroundProtectionLocationRestricted =>
+      'Location access is restricted by the system. Keep the app in the foreground or use a remote host.';
+
+  @override
+  String get backgroundProtectionNeedsAlways =>
+      'Location protection is not active. Tap here and set location access to “Always” in system settings.';
+
+  @override
+  String get backgroundProtectionLocationServicesOff =>
+      'System location services are off. Tap here to check system settings.';
+
+  @override
+  String get backgroundProtectionTaskUnavailable =>
+      'This build lacks the required system eligibility. Keep the app in the foreground or use a remote host.';
+
+  @override
+  String get backgroundProtectionUnavailable =>
+      'Protection is temporarily unavailable. Return to the app and retry; keep long tasks in the foreground or use a remote host.';
+
+  @override
+  String get backgroundProtectionCleanup => 'The previous background protection is still being released.';
+
+  @override
+  String get backgroundProtectionUpdateFailed =>
+      'Could not update background protection. Check the current status and try again.';
+
+  @override
   String get botsFolderGone => 'This folder is gone';
 
   @override
@@ -13172,7 +13246,7 @@ class L10nEn extends L10n {
 
   @override
   String get phoneTawcHint =>
-      'Experimental and off by default; applies on the next start. Only one of this and direct launch can be on. Runs the local engine with tawcroot instead of compatible launch: it starts about three times faster, and package installs and apt get faster too. If it can’t start, the app goes back to compatible launch on its own. The first start after you turn it off first turns the hard links it made into ordinary files, which can take a little longer.';
+      'On by default; a change applies on the next start. Only one of this and direct launch can be on. Runs the local engine with tawcroot instead of compatible launch: it starts about three times faster, and package installs and apt get faster too. If it can’t start, the app goes back to compatible launch on its own. The first start after you turn it off first turns the hard links it made into ordinary files, which can take a little longer.';
 
   @override
   String get phoneTawcFailedHint =>
@@ -17915,6 +17989,51 @@ class L10nEn extends L10n {
   String get stateRemoteUploadTooLarge => 'The file exceeds the remote upload protocol\'s size limit';
 
   @override
+  String get remoteWebOpen => 'Open DSH Web';
+
+  @override
+  String get remoteWebTitle => 'DSH Web';
+
+  @override
+  String get remoteWebOpening => 'Opening DSH Web…';
+
+  @override
+  String get remoteWebRefresh => 'Refresh home page';
+
+  @override
+  String get remoteWebBusy => 'Too many people are using this right now. Please try again later.';
+
+  @override
+  String get remoteWebPairingRequired => 'Connection authorization expired. Reconnect or pair the Host again.';
+
+  @override
+  String get remoteWebHostNotReady =>
+      'The Host web page is not ready. Start DSH Web and update the Remote plugin to 0.6.6 or later.';
+
+  @override
+  String get remoteWebReconnect => 'Disconnected. Reconnect to the Host before reopening.';
+
+  @override
+  String get remoteWebUnsafeUrl =>
+      'The web address could not be verified. Opening was stopped. Check the Host configuration.';
+
+  @override
+  String get remoteWebExchangeRejected => 'Access verification failed. Go back and reopen.';
+
+  @override
+  String get remoteWebSessionExpired => 'The web connection expired. Go back and reopen.';
+
+  @override
+  String get remoteWebPlatformUnavailable =>
+      'This platform does not yet support this web entry. Use the native remote interface.';
+
+  @override
+  String get remoteWebTryAgain => 'Temporarily unable to open the page. Check the Host connection and try again.';
+
+  @override
+  String get remoteWebUnavailable => 'Temporarily unable to open. Please try again later.';
+
+  @override
   String get riskDontShowAgain => 'Don’t show again';
 
   @override
@@ -18494,6 +18613,109 @@ class L10nEn extends L10n {
   @override
   String get selfUpdateEndWaitingNote =>
       'End this wait only after confirming the system is no longer installing. Clearing the record does not cancel a system installation or retry/switch routes. Native confirmation is required again.';
+
+  @override
+  String get backupRecordFailed =>
+      'The phone could not save the restore record. Keep the conversation ID above and check the target; do not import again.';
+
+  @override
+  String get backupSearchKeywords => 'backup,restore,migrate,copy conversations,sync';
+
+  @override
+  String get backupTitle => 'Conversation backups';
+
+  @override
+  String get backupHint =>
+      'Back up to this phone, then switch hosts to restore into an existing workspace. Each restore creates a new conversation; attachments, source files and cross-session relationships are not included.';
+
+  @override
+  String get backupCancelled => 'Cancelled. Backups already verified and saved remain available.';
+
+  @override
+  String get backupUnknown =>
+      'Result needs checking. Reconnect to the original target to query, or check on that host first. No automatic re-import.';
+
+  @override
+  String backupFailed(String code) {
+    return 'Operation failed ($code). Check the connection or storage before retrying.';
+  }
+
+  @override
+  String backupSaved(int count) {
+    return 'Saved $count backups.';
+  }
+
+  @override
+  String backupSavedCloseFailed(int count) {
+    return 'Saved $count backups. The source export handle could not be closed; disconnection or inactivity will release it.';
+  }
+
+  @override
+  String backupRestoreConfirm(String title, String workspace) {
+    return 'Restore “$title” into “$workspace”? This creates a new conversation without merging or overwriting existing history.';
+  }
+
+  @override
+  String backupRestored(String id) {
+    return 'Restored. New conversation: $id';
+  }
+
+  @override
+  String backupRestoredDetached(String id) {
+    return 'History restored but not attached to the workspace. Conversation ID: $id. Find it on the target; do not import again.';
+  }
+
+  @override
+  String get backupOriginalDevice =>
+      'Use the original Remote device identity to connect to the original target and query the commit result.';
+
+  @override
+  String get backupStorageFailed =>
+      'Cannot read backups. Check app storage and the system key. Existing backups will not be reset or overwritten.';
+
+  @override
+  String get backupConnectHost => 'Connect a paired Remote host to back up or restore conversations.';
+
+  @override
+  String get backupNoWorkspace => 'Waiting for host workspaces. If none exist, create one on the host first.';
+
+  @override
+  String get backupWorkspace => 'Entire workspace';
+
+  @override
+  String get backupToPhone => 'Back up to phone';
+
+  @override
+  String get backupExportUnsupported => 'This host does not offer session export. Update its Remote plugin.';
+
+  @override
+  String get backupImportUnsupported => 'This host does not offer session import. Update its Remote plugin.';
+
+  @override
+  String get backupPending => 'Restores to check';
+
+  @override
+  String get backupCheck => 'Check';
+
+  @override
+  String get backupAcknowledge => 'Checked on the target';
+
+  @override
+  String get backupAcknowledgeConfirm =>
+      'Have you checked the target? Clearing this pending record permits another manual import, which may create a duplicate conversation.';
+
+  @override
+  String get backupOnPhone => 'Backups on this phone';
+
+  @override
+  String get backupEmpty => 'No backups yet. Backups stay on this phone and are lost when the app is uninstalled.';
+
+  @override
+  String get backupRestore => 'Restore to current workspace';
+
+  @override
+  String get backupDeleteConfirm =>
+      'Delete this local backup and its restore records? Conversations on hosts will not be deleted.';
 
   @override
   String get shellDeletePermanently => 'Delete permanently';
@@ -25473,6 +25695,87 @@ class L10nEn extends L10n {
 
   @override
   String get tavernPackExportChanged => 'The export\'s sources or options changed; preview again';
+
+  @override
+  String get tavernScripts => 'Script library';
+
+  @override
+  String get tavernScriptsEmpty =>
+      'No global scripts yet. Import a script JSON exported from Tavern Helper; the ones turned on run on the whole-page canvas of every chat.';
+
+  @override
+  String get tavernScriptsImport => 'Import scripts';
+
+  @override
+  String tavernScriptsImported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count scripts to the library',
+      one: 'Added a script to the library',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tavernScriptsExportAll => 'Export all';
+
+  @override
+  String get tavernScriptsOrder => 'Reorder';
+
+  @override
+  String get tavernScriptsOrderNote => 'They run top to bottom. Drag the handle on the right to move one.';
+
+  @override
+  String tavernScriptCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String get tavernScriptUnnamed => 'Untitled script';
+
+  @override
+  String get tavernScriptOpenFolder => 'Open folder';
+
+  @override
+  String get tavernScriptExport => 'Export';
+
+  @override
+  String get tavernScriptDelete => 'Delete';
+
+  @override
+  String tavernScriptDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get tavernScriptDeleteMessage => 'Its variables and buttons go with it. It can\'t be brought back.';
+
+  @override
+  String get tavernChatScripts => 'Scripts';
+
+  @override
+  String get tavernChatScriptsNote => 'The scripts this chat runs on the whole-page canvas, in the order they run.';
+
+  @override
+  String get tavernScriptSourceGlobal => 'Global';
+
+  @override
+  String get tavernScriptSourcePreset => 'Preset';
+
+  @override
+  String get tavernScriptSourceCard => 'Card';
+
+  @override
+  String tavernChatScriptsSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count scripts didn\'t run',
+      one: 'A script didn\'t run',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get updateCheck => 'Check for updates';

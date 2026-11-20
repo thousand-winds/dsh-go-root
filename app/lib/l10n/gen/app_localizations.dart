@@ -3590,6 +3590,132 @@ abstract class L10n {
   /// **'未能确认操作结果。先核实结果；已派发的命令不要自动重试。'**
   String get androidShellErrorUnknown;
 
+  /// No description provided for @backgroundProtectionDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认关闭，仅在有本机任务且 App 退到后台时尝试保护；系统仍可能暂停任务。'**
+  String get backgroundProtectionDescription;
+
+  /// No description provided for @backgroundProtectionAudio.
+  ///
+  /// In zh, this message translates to:
+  /// **'静音音频保护'**
+  String get backgroundProtectionAudio;
+
+  /// No description provided for @backgroundProtectionAudioHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'任务期间在后台播放静音音频，会增加耗电；不会抢占录音、通话或朗读。'**
+  String get backgroundProtectionAudioHint;
+
+  /// No description provided for @backgroundProtectionLocation.
+  ///
+  /// In zh, this message translates to:
+  /// **'后台定位保护'**
+  String get backgroundProtectionLocation;
+
+  /// No description provided for @backgroundProtectionLocationHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'需系统“始终允许”位置权限，会增加耗电并涉及位置隐私；不保存坐标。'**
+  String get backgroundProtectionLocationHint;
+
+  /// No description provided for @backgroundProtectionTask.
+  ///
+  /// In zh, this message translates to:
+  /// **'连续任务保护'**
+  String get backgroundProtectionTask;
+
+  /// No description provided for @backgroundProtectionTaskHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅在本机任务期间申请系统连续任务，是否生效取决于当前版本和系统许可。'**
+  String get backgroundProtectionTaskHint;
+
+  /// No description provided for @backgroundProtectionStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前状态'**
+  String get backgroundProtectionStatus;
+
+  /// No description provided for @backgroundProtectionOff.
+  ///
+  /// In zh, this message translates to:
+  /// **'未开启增强保护'**
+  String get backgroundProtectionOff;
+
+  /// No description provided for @backgroundProtectionReady.
+  ///
+  /// In zh, this message translates to:
+  /// **'已开启，当前未运行；有本机任务且退到后台时才会尝试保护。'**
+  String get backgroundProtectionReady;
+
+  /// No description provided for @backgroundProtectionAudioActive.
+  ///
+  /// In zh, this message translates to:
+  /// **'静音音频保护正在运行'**
+  String get backgroundProtectionAudioActive;
+
+  /// No description provided for @backgroundProtectionLocationActive.
+  ///
+  /// In zh, this message translates to:
+  /// **'后台定位保护正在运行'**
+  String get backgroundProtectionLocationActive;
+
+  /// No description provided for @backgroundProtectionBothActive.
+  ///
+  /// In zh, this message translates to:
+  /// **'静音音频与后台定位保护正在运行'**
+  String get backgroundProtectionBothActive;
+
+  /// No description provided for @backgroundProtectionTaskActive.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统连续任务保护正在运行'**
+  String get backgroundProtectionTaskActive;
+
+  /// No description provided for @backgroundProtectionLocationRestricted.
+  ///
+  /// In zh, this message translates to:
+  /// **'定位权限被系统限制，无法开启定位保护；可保持前台或使用远程主机。'**
+  String get backgroundProtectionLocationRestricted;
+
+  /// No description provided for @backgroundProtectionNeedsAlways.
+  ///
+  /// In zh, this message translates to:
+  /// **'定位保护尚未生效，请点此在系统设置中将位置权限设为“始终允许”。'**
+  String get backgroundProtectionNeedsAlways;
+
+  /// No description provided for @backgroundProtectionLocationServicesOff.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统定位服务已关闭，请点此检查系统设置。'**
+  String get backgroundProtectionLocationServicesOff;
+
+  /// No description provided for @backgroundProtectionTaskUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前版本缺少系统连续任务资格，请保持 App 在前台或使用远程主机。'**
+  String get backgroundProtectionTaskUnavailable;
+
+  /// No description provided for @backgroundProtectionUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'保护暂不可用，请返回 App 重试；长任务可保持前台或使用远程主机。'**
+  String get backgroundProtectionUnavailable;
+
+  /// No description provided for @backgroundProtectionCleanup.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在结束上一次后台保护，尚未完成释放。'**
+  String get backgroundProtectionCleanup;
+
+  /// No description provided for @backgroundProtectionUpdateFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'未能更新后台保护，请查看当前状态后重试。'**
+  String get backgroundProtectionUpdateFailed;
+
   /// No description provided for @botsFolderGone.
   ///
   /// In zh, this message translates to:
@@ -23291,7 +23417,7 @@ abstract class L10n {
   /// No description provided for @phoneTawcHint.
   ///
   /// In zh, this message translates to:
-  /// **'实验功能，默认关闭，下次启动生效，和「直接启动」二选一。用 tawcroot 代替兼容启动运行本机引擎：启动快约三倍，装包、apt 也更快。启动不成功会自动改回兼容启动。关掉后的第一次启动会先把它留下的硬链接整理成普通文件，可能要多等一会。'**
+  /// **'默认开启，改动下次启动生效，和「直接启动」二选一。用 tawcroot 代替兼容启动运行本机引擎：启动快约三倍，装包、apt 也更快。启动不成功会自动改回兼容启动。关掉后的第一次启动会先把它留下的硬链接整理成普通文件，可能要多等一会。'**
   String get phoneTawcHint;
 
   /// No description provided for @phoneTawcFailedHint.
@@ -31226,6 +31352,90 @@ abstract class L10n {
   /// **'文件超过远程上传协议的大小上限'**
   String get stateRemoteUploadTooLarge;
 
+  /// No description provided for @remoteWebOpen.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开 DSH Web'**
+  String get remoteWebOpen;
+
+  /// No description provided for @remoteWebTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'DSH Web'**
+  String get remoteWebTitle;
+
+  /// No description provided for @remoteWebOpening.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在打开 DSH Web…'**
+  String get remoteWebOpening;
+
+  /// No description provided for @remoteWebRefresh.
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新首页'**
+  String get remoteWebRefresh;
+
+  /// No description provided for @remoteWebBusy.
+  ///
+  /// In zh, this message translates to:
+  /// **'人太多了，请稍后重试'**
+  String get remoteWebBusy;
+
+  /// No description provided for @remoteWebPairingRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接授权失效，请重新连接或配对主机。'**
+  String get remoteWebPairingRequired;
+
+  /// No description provided for @remoteWebHostNotReady.
+  ///
+  /// In zh, this message translates to:
+  /// **'主机网页版尚未就绪。请启动 DSH Web，并将 Remote 插件更新到 0.6.6 或更新版本。'**
+  String get remoteWebHostNotReady;
+
+  /// No description provided for @remoteWebReconnect.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接已断开，请重新连接主机后再打开。'**
+  String get remoteWebReconnect;
+
+  /// No description provided for @remoteWebUnsafeUrl.
+  ///
+  /// In zh, this message translates to:
+  /// **'网页地址无法验证，已停止打开。请检查主机配置。'**
+  String get remoteWebUnsafeUrl;
+
+  /// No description provided for @remoteWebExchangeRejected.
+  ///
+  /// In zh, this message translates to:
+  /// **'访问验证失败，请返回后重新打开。'**
+  String get remoteWebExchangeRejected;
+
+  /// No description provided for @remoteWebSessionExpired.
+  ///
+  /// In zh, this message translates to:
+  /// **'网页连接已过期，请返回后重新打开。'**
+  String get remoteWebSessionExpired;
+
+  /// No description provided for @remoteWebPlatformUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前平台暂不支持此网页入口。请使用原生远程界面。'**
+  String get remoteWebPlatformUnavailable;
+
+  /// No description provided for @remoteWebTryAgain.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法打开网页，请检查主机连接后重试。'**
+  String get remoteWebTryAgain;
+
+  /// No description provided for @remoteWebUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法打开，请稍后重试'**
+  String get remoteWebUnavailable;
+
   /// No description provided for @riskDontShowAgain.
   ///
   /// In zh, this message translates to:
@@ -32311,6 +32521,174 @@ abstract class L10n {
   /// In zh, this message translates to:
   /// **'只有确认系统已不在安装时才结束等待。清除本次记录不等于取消系统安装；不会自动重试或切换路线，仍需再次原生确认。'**
   String get selfUpdateEndWaitingNote;
+
+  /// No description provided for @backupRecordFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机未能保存恢复记录。请记下上面的对话 ID 并检查目标主机，不要重复导入。'**
+  String get backupRecordFailed;
+
+  /// No description provided for @backupSearchKeywords.
+  ///
+  /// In zh, this message translates to:
+  /// **'备份,恢复,迁移,复制对话,同步,backup,restore'**
+  String get backupSearchKeywords;
+
+  /// No description provided for @backupTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'对话备份'**
+  String get backupTitle;
+
+  /// No description provided for @backupHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'备份到手机后，可切换主机恢复到已有工作区。每次恢复会新建对话；不含附件、源码和跨对话关系。'**
+  String get backupHint;
+
+  /// No description provided for @backupCancelled.
+  ///
+  /// In zh, this message translates to:
+  /// **'已取消，已校验保存的备份仍可恢复。'**
+  String get backupCancelled;
+
+  /// No description provided for @backupUnknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'结果待核对：请连接原目标主机查询，或先在目标端检查。不会自动重新导入。'**
+  String get backupUnknown;
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'操作失败（{code}）。请检查连接或存储后重试。'**
+  String backupFailed(String code);
+
+  /// No description provided for @backupSaved.
+  ///
+  /// In zh, this message translates to:
+  /// **'已保存 {count} 条备份。'**
+  String backupSaved(int count);
+
+  /// No description provided for @backupSavedCloseFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'已保存 {count} 条备份，源主机导出句柄未能关闭；断线或闲置后会自动释放。'**
+  String backupSavedCloseFailed(int count);
+
+  /// No description provided for @backupRestoreConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'将“{title}”恢复到“{workspace}”？会创建一条新对话，不合并或覆盖已有历史。'**
+  String backupRestoreConfirm(String title, String workspace);
+
+  /// No description provided for @backupRestored.
+  ///
+  /// In zh, this message translates to:
+  /// **'已恢复，新对话：{id}'**
+  String backupRestored(String id);
+
+  /// No description provided for @backupRestoredDetached.
+  ///
+  /// In zh, this message translates to:
+  /// **'历史已恢复，未加入工作区。对话 ID：{id}。请在目标端查找，不要重复导入。'**
+  String backupRestoredDetached(String id);
+
+  /// No description provided for @backupOriginalDevice.
+  ///
+  /// In zh, this message translates to:
+  /// **'请使用原 Remote 设备身份连接原目标主机，再查询提交结果。'**
+  String get backupOriginalDevice;
+
+  /// No description provided for @backupStorageFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法读取备份。请检查应用存储和系统密钥；不会重置或覆盖已有备份。'**
+  String get backupStorageFailed;
+
+  /// No description provided for @backupConnectHost.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接一台已配对的 Remote 主机，即可备份或恢复。'**
+  String get backupConnectHost;
+
+  /// No description provided for @backupNoWorkspace.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待主机工作区列表；没有工作区时请先在主机上创建。'**
+  String get backupNoWorkspace;
+
+  /// No description provided for @backupWorkspace.
+  ///
+  /// In zh, this message translates to:
+  /// **'整个工作区'**
+  String get backupWorkspace;
+
+  /// No description provided for @backupToPhone.
+  ///
+  /// In zh, this message translates to:
+  /// **'备份到手机'**
+  String get backupToPhone;
+
+  /// No description provided for @backupExportUnsupported.
+  ///
+  /// In zh, this message translates to:
+  /// **'此主机未提供对话导出能力，请更新主机 Remote 插件。'**
+  String get backupExportUnsupported;
+
+  /// No description provided for @backupImportUnsupported.
+  ///
+  /// In zh, this message translates to:
+  /// **'此主机未提供对话恢复能力，请更新主机 Remote 插件。'**
+  String get backupImportUnsupported;
+
+  /// No description provided for @backupPending.
+  ///
+  /// In zh, this message translates to:
+  /// **'待核对的恢复'**
+  String get backupPending;
+
+  /// No description provided for @backupCheck.
+  ///
+  /// In zh, this message translates to:
+  /// **'查询'**
+  String get backupCheck;
+
+  /// No description provided for @backupAcknowledge.
+  ///
+  /// In zh, this message translates to:
+  /// **'已在目标端核对'**
+  String get backupAcknowledge;
+
+  /// No description provided for @backupAcknowledgeConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认已在目标端核对？清除此待确认记录后，可手动再导入，但可能创建重复对话。'**
+  String get backupAcknowledgeConfirm;
+
+  /// No description provided for @backupOnPhone.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机上的备份'**
+  String get backupOnPhone;
+
+  /// No description provided for @backupEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有备份。备份仅保存在本机，卸载 App 会丢失。'**
+  String get backupEmpty;
+
+  /// No description provided for @backupRestore.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复到当前工作区'**
+  String get backupRestore;
+
+  /// No description provided for @backupDeleteConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除手机上的这条备份及其恢复记录？不会删除主机上的对话。'**
+  String get backupDeleteConfirm;
 
   /// No description provided for @shellDeletePermanently.
   ///
@@ -44353,6 +44731,126 @@ abstract class L10n {
   /// In zh, this message translates to:
   /// **'导出的来源或选项变了，请重新预览'**
   String get tavernPackExportChanged;
+
+  /// No description provided for @tavernScripts.
+  ///
+  /// In zh, this message translates to:
+  /// **'脚本库'**
+  String get tavernScripts;
+
+  /// No description provided for @tavernScriptsEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有全局脚本。导入酒馆助手导出的脚本 JSON，打开的脚本会在每个对话的整页画布里运行。'**
+  String get tavernScriptsEmpty;
+
+  /// No description provided for @tavernScriptsImport.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入脚本'**
+  String get tavernScriptsImport;
+
+  /// No description provided for @tavernScriptsImported.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 个脚本加入了脚本库'**
+  String tavernScriptsImported(int count);
+
+  /// No description provided for @tavernScriptsExportAll.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出全部'**
+  String get tavernScriptsExportAll;
+
+  /// No description provided for @tavernScriptsOrder.
+  ///
+  /// In zh, this message translates to:
+  /// **'调整顺序'**
+  String get tavernScriptsOrder;
+
+  /// No description provided for @tavernScriptsOrderNote.
+  ///
+  /// In zh, this message translates to:
+  /// **'从上到下依次运行，拖动右边的把手调整。'**
+  String get tavernScriptsOrderNote;
+
+  /// No description provided for @tavernScriptCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 个'**
+  String tavernScriptCount(int count);
+
+  /// No description provided for @tavernScriptUnnamed.
+  ///
+  /// In zh, this message translates to:
+  /// **'未命名脚本'**
+  String get tavernScriptUnnamed;
+
+  /// No description provided for @tavernScriptOpenFolder.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开文件夹'**
+  String get tavernScriptOpenFolder;
+
+  /// No description provided for @tavernScriptExport.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出'**
+  String get tavernScriptExport;
+
+  /// No description provided for @tavernScriptDelete.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除'**
+  String get tavernScriptDelete;
+
+  /// No description provided for @tavernScriptDeleteTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除「{name}」？'**
+  String tavernScriptDeleteTitle(String name);
+
+  /// No description provided for @tavernScriptDeleteMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'它的变量和按钮会一起删除，找不回来。'**
+  String get tavernScriptDeleteMessage;
+
+  /// No description provided for @tavernChatScripts.
+  ///
+  /// In zh, this message translates to:
+  /// **'脚本'**
+  String get tavernChatScripts;
+
+  /// No description provided for @tavernChatScriptsNote.
+  ///
+  /// In zh, this message translates to:
+  /// **'这段对话在整页画布里运行的脚本，按运行顺序。'**
+  String get tavernChatScriptsNote;
+
+  /// No description provided for @tavernScriptSourceGlobal.
+  ///
+  /// In zh, this message translates to:
+  /// **'全局'**
+  String get tavernScriptSourceGlobal;
+
+  /// No description provided for @tavernScriptSourcePreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'预设'**
+  String get tavernScriptSourcePreset;
+
+  /// No description provided for @tavernScriptSourceCard.
+  ///
+  /// In zh, this message translates to:
+  /// **'卡'**
+  String get tavernScriptSourceCard;
+
+  /// No description provided for @tavernChatScriptsSkipped.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 个脚本没有运行'**
+  String tavernChatScriptsSkipped(int count);
 
   /// No description provided for @updateCheck.
   ///

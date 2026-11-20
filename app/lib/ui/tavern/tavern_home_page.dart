@@ -35,6 +35,7 @@ import 'tavern_lorebooks_page.dart';
 import 'tavern_personas.dart';
 import 'tavern_presets_page.dart';
 import 'tavern_regex_page.dart';
+import 'tavern_scripts_page.dart';
 import 'tavern_quick_replies_page.dart';
 import 'tavern_settings_page.dart';
 import 'tavern_widgets.dart';
@@ -469,6 +470,16 @@ class _TavernHomePageState extends ConsumerState<TavernHomePage> {
             onTap: () => unawaited(Navigator.of(context).push(TavernRegexPage.route())),
           ),
           SettingsTile(
+            key: const ValueKey('tavern-library-scripts'),
+            icon: AppIcons.code,
+            title: l10n.tavernScripts,
+            value: Text(switch (tavernScriptCount(ref.watch(tavernGlobalScriptsProvider).value ?? const [])) {
+              0 => l10n.tavernPersonaNotSet,
+              final n => l10n.tavernScriptCount(n),
+            }),
+            onTap: () => unawaited(Navigator.of(context).push(TavernScriptsPage.route())),
+          ),
+          SettingsTile(
             key: const ValueKey('tavern-library-personas'),
             icon: AppIcons.profile,
             title: l10n.tavernDefaultPersona,
@@ -572,7 +583,7 @@ class _ChatRow extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  plainPreview(chat.lastText ?? ''),
+                  plainPreviewLines(chat.lastText ?? '', 2),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(color: dsh.textTertiary, height: 1.4),
@@ -866,7 +877,7 @@ class _ContinueCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    plainPreview(chat.lastText ?? ''),
+                    plainPreviewLines(chat.lastText ?? '', 4),
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(color: dsh.textTertiary, height: 1.4),
@@ -885,6 +896,19 @@ class _ContinueCard extends ConsumerWidget {
 /// white space folded.
 String plainPreview(String text) =>
     text.replaceAll(RegExp(r'<[^>]*>'), '').replaceAll(RegExp(r'[*_`#>]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+
+/// [plainPreview] for a text of at most [lines] lines, cut to more than any
+/// of its lines could hold: a text is laid out whole however few lines it
+/// shows (a 4,000-character reply in two lines takes 13 times what 300
+/// characters do).
+String plainPreviewLines(String text, int lines) {
+  final plain = plainPreview(text);
+  var end = lines * 300;
+  if (plain.length <= end) return plain;
+  // Not between the halves of a surrogate pair.
+  if (plain.codeUnitAt(end - 1) & 0xFC00 == 0xD800) end--;
+  return plain.substring(0, end);
+}
 
 /// The most used tags, most used first.
 /// The shelf's most used tags, leaving out any every character has: picking

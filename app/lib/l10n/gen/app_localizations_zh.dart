@@ -1894,6 +1894,69 @@ class L10nZh extends L10n {
   String get androidShellErrorUnknown => '未能确认操作结果。先核实结果；已派发的命令不要自动重试。';
 
   @override
+  String get backgroundProtectionDescription => '默认关闭，仅在有本机任务且 App 退到后台时尝试保护；系统仍可能暂停任务。';
+
+  @override
+  String get backgroundProtectionAudio => '静音音频保护';
+
+  @override
+  String get backgroundProtectionAudioHint => '任务期间在后台播放静音音频，会增加耗电；不会抢占录音、通话或朗读。';
+
+  @override
+  String get backgroundProtectionLocation => '后台定位保护';
+
+  @override
+  String get backgroundProtectionLocationHint => '需系统“始终允许”位置权限，会增加耗电并涉及位置隐私；不保存坐标。';
+
+  @override
+  String get backgroundProtectionTask => '连续任务保护';
+
+  @override
+  String get backgroundProtectionTaskHint => '仅在本机任务期间申请系统连续任务，是否生效取决于当前版本和系统许可。';
+
+  @override
+  String get backgroundProtectionStatus => '当前状态';
+
+  @override
+  String get backgroundProtectionOff => '未开启增强保护';
+
+  @override
+  String get backgroundProtectionReady => '已开启，当前未运行；有本机任务且退到后台时才会尝试保护。';
+
+  @override
+  String get backgroundProtectionAudioActive => '静音音频保护正在运行';
+
+  @override
+  String get backgroundProtectionLocationActive => '后台定位保护正在运行';
+
+  @override
+  String get backgroundProtectionBothActive => '静音音频与后台定位保护正在运行';
+
+  @override
+  String get backgroundProtectionTaskActive => '系统连续任务保护正在运行';
+
+  @override
+  String get backgroundProtectionLocationRestricted => '定位权限被系统限制，无法开启定位保护；可保持前台或使用远程主机。';
+
+  @override
+  String get backgroundProtectionNeedsAlways => '定位保护尚未生效，请点此在系统设置中将位置权限设为“始终允许”。';
+
+  @override
+  String get backgroundProtectionLocationServicesOff => '系统定位服务已关闭，请点此检查系统设置。';
+
+  @override
+  String get backgroundProtectionTaskUnavailable => '当前版本缺少系统连续任务资格，请保持 App 在前台或使用远程主机。';
+
+  @override
+  String get backgroundProtectionUnavailable => '保护暂不可用，请返回 App 重试；长任务可保持前台或使用远程主机。';
+
+  @override
+  String get backgroundProtectionCleanup => '正在结束上一次后台保护，尚未完成释放。';
+
+  @override
+  String get backgroundProtectionUpdateFailed => '未能更新后台保护，请查看当前状态后重试。';
+
+  @override
   String get botsFolderGone => '这个文件夹已经不在了';
 
   @override
@@ -12512,7 +12575,7 @@ class L10nZh extends L10n {
 
   @override
   String get phoneTawcHint =>
-      '实验功能，默认关闭，下次启动生效，和「直接启动」二选一。用 tawcroot 代替兼容启动运行本机引擎：启动快约三倍，装包、apt 也更快。启动不成功会自动改回兼容启动。关掉后的第一次启动会先把它留下的硬链接整理成普通文件，可能要多等一会。';
+      '默认开启，改动下次启动生效，和「直接启动」二选一。用 tawcroot 代替兼容启动运行本机引擎：启动快约三倍，装包、apt 也更快。启动不成功会自动改回兼容启动。关掉后的第一次启动会先把它留下的硬链接整理成普通文件，可能要多等一会。';
 
   @override
   String get phoneTawcFailedHint => '这台手机上 tawcroot 没有启动成功，已改用兼容启动。停止引擎后打开可再试一次。';
@@ -17016,6 +17079,48 @@ class L10nZh extends L10n {
   String get stateRemoteUploadTooLarge => '文件超过远程上传协议的大小上限';
 
   @override
+  String get remoteWebOpen => '打开 DSH Web';
+
+  @override
+  String get remoteWebTitle => 'DSH Web';
+
+  @override
+  String get remoteWebOpening => '正在打开 DSH Web…';
+
+  @override
+  String get remoteWebRefresh => '刷新首页';
+
+  @override
+  String get remoteWebBusy => '人太多了，请稍后重试';
+
+  @override
+  String get remoteWebPairingRequired => '连接授权失效，请重新连接或配对主机。';
+
+  @override
+  String get remoteWebHostNotReady => '主机网页版尚未就绪。请启动 DSH Web，并将 Remote 插件更新到 0.6.6 或更新版本。';
+
+  @override
+  String get remoteWebReconnect => '连接已断开，请重新连接主机后再打开。';
+
+  @override
+  String get remoteWebUnsafeUrl => '网页地址无法验证，已停止打开。请检查主机配置。';
+
+  @override
+  String get remoteWebExchangeRejected => '访问验证失败，请返回后重新打开。';
+
+  @override
+  String get remoteWebSessionExpired => '网页连接已过期，请返回后重新打开。';
+
+  @override
+  String get remoteWebPlatformUnavailable => '当前平台暂不支持此网页入口。请使用原生远程界面。';
+
+  @override
+  String get remoteWebTryAgain => '暂时无法打开网页，请检查主机连接后重试。';
+
+  @override
+  String get remoteWebUnavailable => '暂时无法打开，请稍后重试';
+
+  @override
   String get riskDontShowAgain => '不再提示';
 
   @override
@@ -17574,6 +17679,102 @@ class L10nZh extends L10n {
 
   @override
   String get selfUpdateEndWaitingNote => '只有确认系统已不在安装时才结束等待。清除本次记录不等于取消系统安装；不会自动重试或切换路线，仍需再次原生确认。';
+
+  @override
+  String get backupRecordFailed => '手机未能保存恢复记录。请记下上面的对话 ID 并检查目标主机，不要重复导入。';
+
+  @override
+  String get backupSearchKeywords => '备份,恢复,迁移,复制对话,同步,backup,restore';
+
+  @override
+  String get backupTitle => '对话备份';
+
+  @override
+  String get backupHint => '备份到手机后，可切换主机恢复到已有工作区。每次恢复会新建对话；不含附件、源码和跨对话关系。';
+
+  @override
+  String get backupCancelled => '已取消，已校验保存的备份仍可恢复。';
+
+  @override
+  String get backupUnknown => '结果待核对：请连接原目标主机查询，或先在目标端检查。不会自动重新导入。';
+
+  @override
+  String backupFailed(String code) {
+    return '操作失败（$code）。请检查连接或存储后重试。';
+  }
+
+  @override
+  String backupSaved(int count) {
+    return '已保存 $count 条备份。';
+  }
+
+  @override
+  String backupSavedCloseFailed(int count) {
+    return '已保存 $count 条备份，源主机导出句柄未能关闭；断线或闲置后会自动释放。';
+  }
+
+  @override
+  String backupRestoreConfirm(String title, String workspace) {
+    return '将“$title”恢复到“$workspace”？会创建一条新对话，不合并或覆盖已有历史。';
+  }
+
+  @override
+  String backupRestored(String id) {
+    return '已恢复，新对话：$id';
+  }
+
+  @override
+  String backupRestoredDetached(String id) {
+    return '历史已恢复，未加入工作区。对话 ID：$id。请在目标端查找，不要重复导入。';
+  }
+
+  @override
+  String get backupOriginalDevice => '请使用原 Remote 设备身份连接原目标主机，再查询提交结果。';
+
+  @override
+  String get backupStorageFailed => '无法读取备份。请检查应用存储和系统密钥；不会重置或覆盖已有备份。';
+
+  @override
+  String get backupConnectHost => '连接一台已配对的 Remote 主机，即可备份或恢复。';
+
+  @override
+  String get backupNoWorkspace => '等待主机工作区列表；没有工作区时请先在主机上创建。';
+
+  @override
+  String get backupWorkspace => '整个工作区';
+
+  @override
+  String get backupToPhone => '备份到手机';
+
+  @override
+  String get backupExportUnsupported => '此主机未提供对话导出能力，请更新主机 Remote 插件。';
+
+  @override
+  String get backupImportUnsupported => '此主机未提供对话恢复能力，请更新主机 Remote 插件。';
+
+  @override
+  String get backupPending => '待核对的恢复';
+
+  @override
+  String get backupCheck => '查询';
+
+  @override
+  String get backupAcknowledge => '已在目标端核对';
+
+  @override
+  String get backupAcknowledgeConfirm => '确认已在目标端核对？清除此待确认记录后，可手动再导入，但可能创建重复对话。';
+
+  @override
+  String get backupOnPhone => '手机上的备份';
+
+  @override
+  String get backupEmpty => '还没有备份。备份仅保存在本机，卸载 App 会丢失。';
+
+  @override
+  String get backupRestore => '恢复到当前工作区';
+
+  @override
+  String get backupDeleteConfirm => '删除手机上的这条备份及其恢复记录？不会删除主机上的对话。';
 
   @override
   String get shellDeletePermanently => '永久删除';
@@ -24181,6 +24382,74 @@ class L10nZh extends L10n {
 
   @override
   String get tavernPackExportChanged => '导出的来源或选项变了，请重新预览';
+
+  @override
+  String get tavernScripts => '脚本库';
+
+  @override
+  String get tavernScriptsEmpty => '还没有全局脚本。导入酒馆助手导出的脚本 JSON，打开的脚本会在每个对话的整页画布里运行。';
+
+  @override
+  String get tavernScriptsImport => '导入脚本';
+
+  @override
+  String tavernScriptsImported(int count) {
+    return '$count 个脚本加入了脚本库';
+  }
+
+  @override
+  String get tavernScriptsExportAll => '导出全部';
+
+  @override
+  String get tavernScriptsOrder => '调整顺序';
+
+  @override
+  String get tavernScriptsOrderNote => '从上到下依次运行，拖动右边的把手调整。';
+
+  @override
+  String tavernScriptCount(int count) {
+    return '$count 个';
+  }
+
+  @override
+  String get tavernScriptUnnamed => '未命名脚本';
+
+  @override
+  String get tavernScriptOpenFolder => '打开文件夹';
+
+  @override
+  String get tavernScriptExport => '导出';
+
+  @override
+  String get tavernScriptDelete => '删除';
+
+  @override
+  String tavernScriptDeleteTitle(String name) {
+    return '删除「$name」？';
+  }
+
+  @override
+  String get tavernScriptDeleteMessage => '它的变量和按钮会一起删除，找不回来。';
+
+  @override
+  String get tavernChatScripts => '脚本';
+
+  @override
+  String get tavernChatScriptsNote => '这段对话在整页画布里运行的脚本，按运行顺序。';
+
+  @override
+  String get tavernScriptSourceGlobal => '全局';
+
+  @override
+  String get tavernScriptSourcePreset => '预设';
+
+  @override
+  String get tavernScriptSourceCard => '卡';
+
+  @override
+  String tavernChatScriptsSkipped(int count) {
+    return '$count 个脚本没有运行';
+  }
 
   @override
   String get updateCheck => '检查更新';
