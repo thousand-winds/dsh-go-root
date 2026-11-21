@@ -32,6 +32,7 @@ import '../../tavern/tavern_interact.dart';
 import '../../tavern/tavern_islands.dart';
 import '../../tavern/tavern_canvas.dart';
 import '../../tavern/tavern_canvas_calls.dart';
+import '../../tavern/tavern_canvas_host.dart' show tavernHostButtonPrefix;
 import '../../tavern/tavern_card_scripts.dart';
 import '../../tavern/tavern_script_wire.dart' show tavernScriptKey;
 import '../../tavern/tavern_components.dart' show tavernComponentTagsOut;
@@ -227,14 +228,17 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
   /// chat's own script context, opened on its first call.
   TavernCanvasCalls? _calls;
   String? _canvasCharacter;
-  TavernCanvasCalls get _canvasCalls => _calls ??= TavernCanvasCalls(
-    _tavern.scripts,
-    chatId: widget.chatId,
-    characterId: () => _canvasCharacter,
-    pages: ref.read(tavernScriptPagesProvider),
-    avatar: (id) async => tavernImageDataUrl((await _tavern.character(id))?.avatarPath),
-    interact: _interact,
-  )..liveButtons.addListener(_buttonsChanged);
+  TavernCanvasCalls get _canvasCalls => _calls ??=
+      TavernCanvasCalls(
+          _tavern.scripts,
+          chatId: widget.chatId,
+          characterId: () => _canvasCharacter,
+          pages: ref.read(tavernScriptPagesProvider),
+          avatar: (id) async => tavernImageDataUrl((await _tavern.character(id))?.avatarPath),
+          interact: _interact,
+        )
+        ..liveButtons.addListener(_buttonsChanged)
+        ..hostButtons.addListener(_buttonsChanged);
 
   void _buttonsChanged() {
     if (mounted) setState(() {});
@@ -485,6 +489,55 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
     return true;
   }
 
+  /// The transcript's rows (by key) as last built, in order; null before the
+  /// story first showed. A row not among them that turns up at the newest
+  /// end has arrived and fades in, once; what was there on opening, and
+  /// older pages loaded on the way back, just are.
+  List<String>? _lastRows;
+
+  /// More new rows at once than a line and its reply (and a chapter's start)
+  /// is not an arrival but another branch: it shows at once.
+  static const _arrivalMost = 3;
+
+  /// A reply is being continued and its turn has not said which yet: the
+  /// pending row standing in for it is no arrival.
+  bool _continuing = false;
+
+  /// The reply this page's turn wrote: it was on screen as it was written, so
+  /// its stored row goes on from that, however many builds came between.
+  String? _streamed;
+
+  /// The rows arriving in this build of [keys]: true for one that took
+  /// another message's place (an alternative switched to), which only fades; false
+  /// for a new one, which also rises. A row that goes on with what was
+  /// already on screen (the reply being written, then written) is not
+  /// among them.
+  Map<String, bool> _arrivals(List<String> keys) {
+    final last = _lastRows;
+    _lastRows = keys;
+    final streamed = _streamed;
+    // Its stored row is drawn: from here on it is a reply like any other.
+    if (keys.contains(streamed)) _streamed = null;
+    if (last == null) return const {};
+    final before = last.toSet();
+    var start = keys.length;
+    while (start > 0 && !before.contains(keys[start - 1])) {
+      start--;
+    }
+    if (start == keys.length || keys.length - start > _arrivalMost) return const {};
+    final now = keys.toSet();
+    return {
+      for (var i = start; i < keys.length; i++)
+        // A reply being written goes on from the pending row, or from itself
+        // when it is continued; a written reply goes on from its stream row.
+        if (!(keys[i] == 'stream-pending' && _continuing) &&
+            !(keys[i].startsWith('stream-')
+                ? before.contains('stream-pending') || before.contains(keys[i].substring('stream-'.length))
+                : before.contains('stream-${keys[i]}') || keys[i] == streamed))
+          keys[i]: i < last.length && !last[i].startsWith('stream-') && !now.contains(last[i]),
+    };
+  }
+
   /// The state the card pins, for the header's line (engine T17); none when
   /// it pins nothing or the state cannot be read.
   String? _pinned;
@@ -552,11 +605,12 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
     if (mounted) setState(() => _loadingOlder = false);
   }
 
-  void _run(Stream<TavernEvent> Function() start, {String? draft, bool rejoin = false}) {
+  void _run(Stream<TavernEvent> Function() start, {String? draft, bool rejoin = false, bool continuing = false}) {
     // A rejoin still listening for nothing must not end this turn when it closes.
     unawaited(_turn?.cancel());
     _immersive.value = false;
     _rejoining = rejoin;
+    _continuing = continuing;
     if (!rejoin) {
       setState(() {
         _error = null;
@@ -602,6 +656,8 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
           case TavernToolActivity():
             _refreshTools();
           case TavernTurnStarted(:final message):
+            _continuing = false;
+            _streamed = message.nodeId;
             setState(() => _streamNode = message.nodeId);
             // Continuing a reply: it starts from what the reply already says.
             _stream.value = (text: message.text, reasoning: message.reasoning ?? '');
@@ -632,7 +688,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
                   calm: true,
                   action: (
                     label: l10n.tavernContinueReply,
-                    onPressed: () => _run(() => _tavern.continueReply(widget.chatId, message.nodeId)),
+                    onPressed: () => _run(() => _tavern.continueReply(widget.chatId, message.nodeId), continuing: true),
                   ),
                 );
               case 'content_filter':
@@ -668,7 +724,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
                   onPressed: switch (partial) {
                     null when draft != null => _send,
                     final p? => () => _run(() => _tavern.regenerate(widget.chatId, p.nodeId)),
-                    null => () => _run(start),
+                    null => () => _run(start, continuing: continuing),
                   },
                 ),
               },
@@ -921,6 +977,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
 
   /// The reply's node, once known: the page places the reply by it.
   void _adopt(String nodeId) {
+    _streamed = nodeId;
     if (_streamNode == null) setState(() => _streamNode = nodeId);
   }
 
@@ -1057,7 +1114,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
     _input.clear();
     switch (command) {
       case TavernSlash.continueReply:
-        _run(() => _tavern.continueReply(widget.chatId, last.nodeId));
+        _run(() => _tavern.continueReply(widget.chatId, last.nodeId), continuing: true);
       case TavernSlash.regenerate:
         _run(() => _tavern.regenerate(widget.chatId, last.nodeId));
       case TavernSlash.narrate || TavernSlash.sendOnly || TavernSlash.impersonate:
@@ -1097,22 +1154,22 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
       builder: (sheet) => SafeArea(
         top: false,
         child: SheetGroup(
-          margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          margin: _sheetMargin,
           children: [
             SettingsTile(
               key: const ValueKey('tavern-send-only'),
               icon: AppIcons.send,
               tinted: false,
+              chevron: false,
               title: l10n.tavernSendOnly,
-              subtitle: l10n.tavernSendOnlySubtitle,
               onTap: () => Navigator.of(sheet).pop(false),
             ),
             SettingsTile(
               key: const ValueKey('tavern-narrate'),
               icon: AppIcons.quote,
               tinted: false,
+              chevron: false,
               title: l10n.tavernNarrate,
-              subtitle: l10n.tavernNarrateSubtitle,
               onTap: () => Navigator.of(sheet).pop(true),
             ),
           ],
@@ -1150,7 +1207,13 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
   void _pressScriptButton(String key, String name) {
     unawaited(HapticFeedback.selectionClick());
     final deliver = _canvasCalls.deliver;
-    if (deliver != null) unawaited(deliver({'kind': 'button', 'key': key, 'name': name}));
+    if (deliver == null) return;
+    // One a script put in ST's places for buttons: clicked there.
+    if (key.startsWith(tavernHostButtonPrefix)) {
+      unawaited(deliver({'kind': 'press', 'id': key.substring(tavernHostButtonPrefix.length)}));
+      return;
+    }
+    unawaited(deliver({'kind': 'button', 'key': key, 'name': name}));
   }
 
   void _sendQuick(String text) {
@@ -1179,7 +1242,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
         child: SingleChildScrollView(
           child: SheetGroup(
             title: l10n.tavernQuickReplies,
-            margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            margin: _sheetMargin,
             children: [
               for (final (i, reply) in replies.indexed)
                 SettingsTile(
@@ -1228,7 +1291,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
     final last = _messages?.lastOrNull;
     if (_running || last == null || last.role != TavernRole.character) return;
     unawaited(HapticFeedback.selectionClick());
-    _run(() => _tavern.continueReply(widget.chatId, last.nodeId));
+    _run(() => _tavern.continueReply(widget.chatId, last.nodeId), continuing: true);
   }
 
   /// 掷骰: what came up joins whatever is in the box, on a line of its own.
@@ -1355,6 +1418,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
           icon: icon,
           tinted: false,
           danger: danger,
+          chevron: false,
           title: title,
           onTap: () => Navigator.of(sheet).pop(action),
         );
@@ -1363,7 +1427,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
           top: false,
           child: SingleChildScrollView(
             child: SheetGroup(
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              margin: _sheetMargin,
               children: [
                 row(_MessageAction.copy, AppIcons.copy, l10n.commonCopy),
                 if (character)
@@ -1415,7 +1479,7 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
       case _MessageAction.regenerate:
         if (!_running) _run(() => _tavern.regenerate(widget.chatId, message.nodeId));
       case _MessageAction.continueReply:
-        if (!_running) _run(() => _tavern.continueReply(widget.chatId, message.nodeId));
+        if (!_running) _run(() => _tavern.continueReply(widget.chatId, message.nodeId), continuing: true);
       case _MessageAction.inspect:
         await Navigator.of(context).push(TavernInspectorPage.route(widget.chatId, nodeId: message.nodeId));
       case _MessageAction.branchHere:
@@ -1638,6 +1702,23 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
           lead: name,
         ),
     ];
+    final arriving = messages == null
+        ? const <String, bool>{}
+        : _arrivals([for (final row in rows) (row.key! as ValueKey<String>).value]);
+    final arrivalOrder = arriving.keys.toList();
+    Widget arrive(Widget row, Widget shown) {
+      final key = (row.key! as ValueKey<String>).value;
+      final swapped = arriving[key];
+      final swap = swapped ?? false;
+      return TavernArrive(
+        enabled: swapped != null,
+        index: arrivalOrder.indexOf(key),
+        duration: swap ? AppMotion.quick : AppMotion.standard,
+        curve: swap ? AppMotion.std : AppMotion.enter,
+        offset: swap ? 0 : AppMotion.rise,
+        child: shown,
+      );
+    }
 
     // Read here, not in the 视觉小说 builder below, which reruns on every
     // piece of the reply.
@@ -1682,6 +1763,9 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
                     const <TavernRunnableScript>[])
               if (s.buttonsEnabled)
                 for (final b in live[tavernScriptKey(s.owner)] ?? tavernScriptButtons(s)) (tavernScriptKey(s.owner), b),
+            // And what they put in ST's places for buttons (its QR bar…).
+            for (final b in _calls?.hostButtons.value ?? const <({String id, String label})>[])
+              ('$tavernHostButtonPrefix${b.id}', b.label),
           ]
         : const <(String, String)>[];
     // The card's own scripts, where they wait on 整页画布 being on (off, and
@@ -1916,10 +2000,16 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
                             Padding(
                               key: row.key,
                               padding: const EdgeInsets.symmetric(vertical: 6),
-                              // The message gone to, marked for a moment.
-                              child: _jumpTarget != null && row.key == ValueKey<String>(_jumpTarget!)
-                                  ? _JumpMark(key: _jumpKey, child: row)
-                                  : row,
+                              // A line just sent, a reply just begun: fades in
+                              // and rises a little, once. An alternative switched
+                              // to only fades in where the other was.
+                              child: arrive(
+                                row,
+                                // The message gone to, marked for a moment.
+                                _jumpTarget != null && row.key == ValueKey<String>(_jumpTarget!)
+                                    ? _JumpMark(key: _jumpKey, child: row)
+                                    : row,
+                              ),
                             ),
                           if (_hasOlder)
                             const Padding(
@@ -1942,45 +2032,58 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // No key yet: say so before the first line, not after it fails.
-                if (!preview && _error == null && ref.watch(tavernNeedsKeyProvider))
-                  _KeyMissing(onAdd: _openKeySettings),
+                // Each word over the box opens and folds its room as it comes and goes.
+                _Slot(
+                  child: !preview && _error == null && ref.watch(tavernNeedsKeyProvider)
+                      ? _KeyMissing(onAdd: _openKeySettings)
+                      : null,
+                ),
                 // 视觉小说 and the canvas draw no message rows: the newest
                 // reply's dice and what it asks to remember sit here instead.
-                if ((layout == TavernLayout.visualNovel || canvas) && !_running)
-                  if (_toolStrips(
-                        lastCharacter ?? '',
-                        toolTurns[lastCharacter] ?? const [],
-                        onDecide: _decide,
-                        onRetry: _submitDecision,
-                      )
-                      case final strips?)
-                    // At most a third of the screen: the composer stays in view.
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height / 3),
-                        child: SingleChildScrollView(child: strips),
-                      ),
-                    ),
-                if (_error == null && scriptsWaiting > 0 && hintCharacter != null)
-                  Padding(
-                    key: const ValueKey('tavern-scripts-hint'),
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _Notice(
-                      message: l10n.tavernCardScriptsHint(scriptsWaiting),
-                      action: (
-                        label: l10n.tavernCardScriptsHintAction,
-                        // For this card: its chats on the canvas, the rest as they were.
-                        onPressed: () => unawaited(
-                          ref.read(tavernCharacterRenderProvider(hintCharacter).notifier).set(TavernRender.canvas),
+                _Slot(
+                  child: (layout == TavernLayout.visualNovel || canvas) && !_running
+                      ? switch (_toolStrips(
+                          lastCharacter ?? '',
+                          toolTurns[lastCharacter] ?? const [],
+                          onDecide: _decide,
+                          onRetry: _submitDecision,
+                        )) {
+                          // At most a third of the screen: the composer stays in view.
+                          final strips? => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height / 3),
+                              child: SingleChildScrollView(child: strips),
+                            ),
+                          ),
+                          null => null,
+                        }
+                      : null,
+                ),
+                _Slot(
+                  child: _error != null || scriptsWaiting == 0 || hintCharacter == null
+                      ? null
+                      : Padding(
+                          key: const ValueKey('tavern-scripts-hint'),
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _Notice(
+                            message: l10n.tavernCardScriptsHint(scriptsWaiting),
+                            action: (
+                              label: l10n.tavernCardScriptsHintAction,
+                              // For this card: its chats on the canvas, the rest as they were.
+                              onPressed: () => unawaited(
+                                ref
+                                    .read(tavernCharacterRenderProvider(hintCharacter).notifier)
+                                    .set(TavernRender.canvas),
+                              ),
+                            ),
+                            onDismiss: () => unawaited(
+                              tavernPutScriptsHintAway(hintCharacter)
+                                  .then((_) => ref.invalidate(tavernScriptsHintOffProvider(hintCharacter))),
+                            ),
+                          ),
                         ),
-                      ),
-                      onDismiss: () => unawaited(
-                        tavernPutScriptsHintAway(hintCharacter)
-                            .then((_) => ref.invalidate(tavernScriptsHintOffProvider(hintCharacter))),
-                      ),
-                    ),
-                  ),
+                ),
                 _ErrorSlot(
                   error: _error,
                   calm: _calm,
@@ -2010,28 +2113,32 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
                         ? l10n.tavernComposerNoKey
                         : l10n.tavernComposerHint(name),
                     leading: TavernPersonaKey(chatId: widget.chatId, enabled: !_running),
-                    tray: !_running && messages != null && _input.text.trimLeft().startsWith('/')
-                        // Typing a command: the commands there are.
-                        ? _SlashRow(onPick: _pickSlash)
-                        : !_running && messages != null && (!_readingBack.value || _focus.hasFocus)
-                        ? _QuickReplyRow(
-                            members: [
-                              for (final m in group?.members ?? const <TavernGroupMember>[])
-                                if (names[m.characterId] case final n?) (m.characterId, n),
-                            ],
-                            onSpeak: _speak,
-                            directed: _directed,
-                            onDirected: _suggest,
-                            onDirectedSend: _sendQuick,
-                            replies: ref.watch(tavernQuickRepliesProvider),
-                            onSend: _sendQuick,
-                            onEdit: _editQuick,
-                            scriptButtons: scriptButtons,
-                            onScriptButton: _pressScriptButton,
-                            onDice: () => unawaited(_dice()),
-                            onAll: () => unawaited(_allQuick()),
-                          )
-                        : null,
+                    // The commands and the capsules cross-fade as one gives way to the other.
+                    tray: _traySwap(
+                      context,
+                      !_running && messages != null && _input.text.trimLeft().startsWith('/')
+                          // Typing a command: the commands there are.
+                          ? _SlashRow(onPick: _pickSlash)
+                          : !_running && messages != null && (!_readingBack.value || _focus.hasFocus)
+                          ? _QuickReplyRow(
+                              members: [
+                                for (final m in group?.members ?? const <TavernGroupMember>[])
+                                  if (names[m.characterId] case final n?) (m.characterId, n),
+                              ],
+                              onSpeak: _speak,
+                              directed: _directed,
+                              onDirected: _suggest,
+                              onDirectedSend: _sendQuick,
+                              replies: ref.watch(tavernQuickRepliesProvider),
+                              onSend: _sendQuick,
+                              onEdit: _editQuick,
+                              scriptButtons: scriptButtons,
+                              onScriptButton: _pressScriptButton,
+                              onDice: () => unawaited(_dice()),
+                              onAll: () => unawaited(_allQuick()),
+                            )
+                          : null,
+                    ),
                     // While the box is empty: 帮我写 (an idea to start from) and, after
                     // a reply, 接着写 (it goes on).
                     accessory: ValueListenableBuilder<TextEditingValue>(
@@ -2078,6 +2185,17 @@ class _TavernChatPageState extends ConsumerState<TavernChatPage> {
   }
 }
 
+/// [row] over the composer, cross-fading ([AppMotion.quick]) with the one it
+/// replaces; both are one capsule high.
+Widget? _traySwap(BuildContext context, Widget? row) => row == null
+    ? null
+    : AnimatedSwitcher(
+        duration: AppMotion.of(context, AppMotion.quick),
+        switchInCurve: AppMotion.std,
+        switchOutCurve: AppMotion.std,
+        child: row,
+      );
+
 /// Whether this chat's messages put their HTML in islands: the character's
 /// own choice or 酒馆设置's, decided once by the page for every message.
 class _IslandsScope extends InheritedWidget {
@@ -2092,6 +2210,10 @@ class _IslandsScope extends InheritedWidget {
 }
 
 final _none = TavernMessage(nodeId: '', role: TavernRole.system, speaker: '', text: '', at: DateTime(0));
+
+/// Around the group in this page's sheets (the message menu, sending another
+/// way, every quick reply): the same air under the handle in each.
+const _sheetMargin = EdgeInsets.fromLTRB(16, 8, 16, 16);
 
 /// A quiet round key beside the composer's send key, the size of its others.
 class _ComposerKey extends StatelessWidget {
@@ -2111,9 +2233,9 @@ class _ComposerKey extends StatelessWidget {
         message: label,
         child: InkResponse(
           onTap: onPressed,
-          radius: 22,
+          radius: 20,
           child: SizedBox.square(
-            dimension: 40,
+            dimension: TavernPersonaKey.size,
             child: Icon(icon, size: 20, color: scheme.onSurface.withValues(alpha: 0.7)),
           ),
         ),
@@ -2260,7 +2382,7 @@ class _MessageRow extends StatelessWidget {
         children: [
           if (showName && message.role == TavernRole.character)
             Padding(
-              padding: const EdgeInsets.only(bottom: 2),
+              padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 tavernSpeaker(context, message),
                 key: ValueKey('tavern-speaker-${message.nodeId}'),
@@ -2274,7 +2396,7 @@ class _MessageRow extends StatelessWidget {
           // Narration says so: it is no one's line.
           if (message.role == TavernRole.narrator)
             Padding(
-              padding: const EdgeInsets.only(bottom: 2),
+              padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 tavernSpeaker(context, message),
                 key: ValueKey('tavern-narrator-${message.nodeId}'),
@@ -2365,6 +2487,22 @@ class _UsageLine extends StatelessWidget {
   }
 }
 
+/// A row of capsules in the composer's tray: its first capsule on the
+/// persona key's edge, and as much air under the capsules as over them.
+class _TrayRow extends StatelessWidget {
+  const _TrayRow({required this.child});
+
+  static const gap = 8.0;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 2),
+    child: SizedBox(height: 36, child: child),
+  );
+}
+
 /// While the box starts with a slash: the commands, each filling the box.
 class _SlashRow extends StatelessWidget {
   const _SlashRow({required this.onPick});
@@ -2381,26 +2519,21 @@ class _SlashRow extends StatelessWidget {
       TavernSlash.regenerate => l10n.tavernRegenerate,
       TavernSlash.impersonate => l10n.tavernWriteForMe,
     };
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: SizedBox(
-        height: 36,
-        child: ListView.separated(
-          key: const ValueKey('tavern-slash-row'),
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          itemCount: TavernSlash.values.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 8),
-          itemBuilder: (context, i) {
-            final c = TavernSlash.values[i];
-            return CapsuleChoiceChip(
-              key: ValueKey('tavern-slash-${c.word}'),
-              label: '/${c.word} ${label(c)}',
-              selected: false,
-              onSelected: () => onPick(c),
-            );
-          },
-        ),
+    return _TrayRow(
+      child: ListView.separated(
+        key: const ValueKey('tavern-slash-row'),
+        scrollDirection: Axis.horizontal,
+        itemCount: TavernSlash.values.length,
+        separatorBuilder: (_, _) => const SizedBox(width: _TrayRow.gap),
+        itemBuilder: (context, i) {
+          final c = TavernSlash.values[i];
+          return CapsuleChoiceChip(
+            key: ValueKey('tavern-slash-${c.word}'),
+            label: '/${c.word} ${label(c)}',
+            selected: false,
+            onSelected: () => onPick(c),
+          );
+        },
       ),
     );
   }
@@ -2453,28 +2586,23 @@ class _QuickReplyRow extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: SizedBox(
-      height: 36,
-      child: ListView.separated(
-        key: const ValueKey('tavern-quick-replies'),
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        itemCount: members.length + directed.length + replies.length + scriptButtons.length + (replies.isEmpty ? 1 : 2),
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        // The director's suggestions arrive whenever it has them: each new
-        // one fades in, a beat after the one before it.
-        itemBuilder: (context, i) => i < members.length
-            ? CapsuleChoiceChip(
-                key: ValueKey('tavern-speak-${members[i].$1}'),
-                icon: AppIcons.mention,
-                label: members[i].$2,
-                selected: false,
-                onSelected: () => onSpeak?.call(members[i].$1),
-              )
-            : _directedOrReply(context, i - members.length),
-      ),
+  Widget build(BuildContext context) => _TrayRow(
+    child: ListView.separated(
+      key: const ValueKey('tavern-quick-replies'),
+      scrollDirection: Axis.horizontal,
+      itemCount: members.length + directed.length + replies.length + scriptButtons.length + (replies.isEmpty ? 1 : 2),
+      separatorBuilder: (_, _) => const SizedBox(width: _TrayRow.gap),
+      // The director's suggestions arrive whenever it has them: each new
+      // one fades in, a beat after the one before it.
+      itemBuilder: (context, i) => i < members.length
+          ? CapsuleChoiceChip(
+              key: ValueKey('tavern-speak-${members[i].$1}'),
+              icon: AppIcons.mention,
+              label: members[i].$2,
+              selected: false,
+              onSelected: () => onSpeak?.call(members[i].$1),
+            )
+          : _directedOrReply(context, i - members.length),
     ),
   );
 
@@ -2847,6 +2975,10 @@ class _AlternativesCount extends StatelessWidget {
 class _Alternatives extends StatelessWidget {
   const _Alternatives({required this.message, required this.last, required this.busy, required this.onSibling});
 
+  /// Each key's box and its glyph: as the VN box's own keys.
+  static const _key = 32.0;
+  static const _glyph = 18.0;
+
   final TavernMessage message;
   final bool last;
   final bool busy;
@@ -2859,30 +2991,39 @@ class _Alternatives extends StatelessWidget {
     final style = AppType.tabular(Theme.of(context).textTheme.labelSmall!.copyWith(color: dsh.textTertiary));
     final atEnd = message.siblingIndex >= message.siblingCount - 1;
     final canNext = !atEnd || last;
-    // The keys' own padding would indent the row; line its ‹ up with the text.
+    Widget key(Key key, String tooltip, IconData icon, VoidCallback? onPressed) => IconButton(
+      key: key,
+      tooltip: tooltip,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: _key, height: _key),
+      // The box is the key: no wider tap target around it to throw the row off.
+      style: IconButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+      iconSize: _glyph,
+      color: dsh.textTertiary,
+      onPressed: onPressed,
+      icon: Icon(icon),
+    );
+    // The keys' own air would indent the row; line its ‹ up with the text.
     return Transform.translate(
-      offset: const Offset(-10, 0),
+      offset: const Offset(-(_key - _glyph) / 2, 0),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            key: const ValueKey('tavern-prev'),
-            tooltip: l10n.tavernPrevious,
-            visualDensity: VisualDensity.compact,
-            iconSize: 18,
-            color: dsh.textTertiary,
-            onPressed: busy || message.siblingIndex == 0 ? null : () => onSibling(-1),
-            icon: Icon(AppIcons.keyLeft),
-          ),
-          Text('${message.siblingIndex + 1}/${message.siblingCount}', style: style),
-          IconButton(
-            key: const ValueKey('tavern-next'),
-            tooltip: atEnd ? l10n.tavernRegenerate : l10n.tavernNext,
-            visualDensity: VisualDensity.compact,
-            iconSize: 18,
-            color: dsh.textTertiary,
-            onPressed: busy || !canNext ? null : () => onSibling(1),
-            icon: Icon(atEnd ? AppIcons.regenerate : AppIcons.keyRight),
+          // One version: nothing to page through, only ↻.
+          if (message.siblingCount > 1) ...[
+            key(
+              const ValueKey('tavern-prev'),
+              l10n.tavernPrevious,
+              AppIcons.keyLeft,
+              busy || message.siblingIndex == 0 ? null : () => onSibling(-1),
+            ),
+            Text('${message.siblingIndex + 1}/${message.siblingCount}', style: style),
+          ],
+          key(
+            const ValueKey('tavern-next'),
+            atEnd ? l10n.tavernRegenerate : l10n.tavernNext,
+            atEnd ? AppIcons.regenerate : AppIcons.keyRight,
+            busy || !canNext ? null : () => onSibling(1),
           ),
         ],
       ),
@@ -2956,7 +3097,7 @@ class _StreamingReply extends StatelessWidget {
         children: [
           if (speaker case final who? when who.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(bottom: 2),
+              padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 who,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -3130,6 +3271,22 @@ class _KeyMissing extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A place over the composer for [child] when there is one: its room opens
+/// and folds away again ([AppMotion.standard]) instead of the box jumping.
+class _Slot extends StatelessWidget {
+  const _Slot({required this.child});
+
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) => SmoothSize(
+    duration: AppMotion.of(context, AppMotion.standard),
+    curve: AppMotion.std,
+    alignment: Alignment.bottomCenter,
+    child: child ?? const SizedBox(width: double.infinity),
+  );
 }
 
 /// The last turn's error over the composer, with 「重试」 when it can retry;

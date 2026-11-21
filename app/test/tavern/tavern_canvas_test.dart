@@ -223,10 +223,11 @@ void main() {
     );
     final open = page();
     expect(open, contains('<div id="chat"></div>'));
-    // A long story: only the latest messages are always laid out, and one
-    // drawn as it was is kept (the script itself was checked in Edge).
-    expect(open, contains('.mes.far{content-visibility:auto;'));
-    expect(open, contains("m.classList.toggle('far',i<list.length-$tavernCanvasNear)"));
+    // A long story: only the latest messages are always drawn, the rest while
+    // in sight (tavern_page_perf_test.dart), and one drawn as it was is kept
+    // (the script itself was checked in Edge).
+    expect(open, contains('.mes.dsh-off{content-visibility:auto;}'));
+    expect(open, contains('sight.watch(m,i>=list.length-$tavernCanvasTail)'));
     expect(open, contains('if(m&&m._dsh===key)'));
     // A card's scripts run unless 不运行卡的脚本 is on; never with our nonce.
     expect(open, contains('var runScripts=true'));
@@ -544,6 +545,42 @@ void main() {
     ]);
   });
 
+  testWidgets("what scripts put in ST's QR bar sits after their own buttons; a tap is pressed in the page", (
+    tester,
+  ) async {
+    final (_, _, canvas) = await _chat(
+      tester,
+      overrides: [
+        _scripts([
+          _script('s1', buttons: ['前往']),
+        ]),
+      ],
+    );
+    await tester.pumpAndSettle();
+    canvas.calls!.hostButtons.value = [(id: '7', label: '猫神·剧场')];
+    await tester.pumpAndSettle();
+    final row = find.byKey(const ValueKey('tavern-quick-replies'));
+    expect(find.descendant(of: row, matching: find.text('猫神·剧场')), findsOneWidget);
+    final own = tester.getTopLeft(find.byKey(const ValueKey('tavern-script-button-0'))).dx;
+    final host = tester.getTopLeft(find.byKey(const ValueKey('tavern-script-button-1'))).dx;
+    expect(own < host, isTrue);
+
+    final pressed = <Map<String, Object?>>[];
+    canvas.calls!.deliver = (d) async {
+      pressed.add(d);
+      return true;
+    };
+    await tester.tap(find.byKey(const ValueKey('tavern-script-button-1')));
+    await tester.pump();
+    expect(pressed, [
+      {'kind': 'press', 'id': '7'},
+    ]);
+    // A new page: none until it says.
+    canvas.calls!.hostButtons.value = const [];
+    await tester.pumpAndSettle();
+    expect(find.text('猫神·剧场'), findsNothing);
+  });
+
   testWidgets('no script buttons where the scripts do not run: 不运行卡的脚本 on, or the native list', (tester) async {
     final override = _scripts([
       _script('s1', buttons: ['前往']),
@@ -566,7 +603,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final hint = find.byKey(const ValueKey('tavern-scripts-hint'));
-    expect(find.descendant(of: hint, matching: find.text('这张卡带了 2 个脚本，打开「整页画布（试用）」才会运行')), findsOneWidget);
+    expect(find.descendant(of: hint, matching: find.text('2 个卡片脚本要在整页画布里运行')), findsOneWidget);
     expect(find.byKey(const ValueKey('fake-canvas')), findsNothing);
 
     await tester.tap(find.descendant(of: hint, matching: find.text('打开')));
@@ -601,7 +638,7 @@ void main() {
     await _chat(tester, prefs: {TavernSettingsController.canvasKey: false}, overrides: [override]);
     await tester.pumpAndSettle();
     final hint = find.byKey(const ValueKey('tavern-scripts-hint'));
-    expect(find.descendant(of: hint, matching: find.text('这张卡带了 1 个脚本，打开「整页画布（试用）」才会运行')), findsOneWidget);
+    expect(find.descendant(of: hint, matching: find.text('1 个卡片脚本要在整页画布里运行')), findsOneWidget);
     await tester.tap(find.descendant(of: hint, matching: find.byType(IconButton)));
     await tester.pumpAndSettle();
     expect(hint, findsNothing);

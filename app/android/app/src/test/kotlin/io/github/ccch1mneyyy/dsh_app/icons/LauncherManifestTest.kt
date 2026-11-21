@@ -58,9 +58,19 @@ class LauncherManifestTest {
 
     @Test fun thePhoneShowsTheAppAsDshGo() {
         val app = manifest().children("application").single()
-        assertEquals("DSH Go", app.getAttribute("android:label"))
+        // The name comes from build.gradle.kts: DSH Go, or DSH Go 测试 for a side test build.
+        assertEquals("\${appLabel}", app.getAttribute("android:label"))
+        val gradle = File("build.gradle.kts").readText()
+        assertTrue(gradle.contains("manifestPlaceholders[\"appLabel\"] = if (sideBuild) \"DSH Go 测试\" else \"DSH Go\""))
         // Notification titles say the same name.
-        assertEquals(app.getAttribute("android:label"), AppStrings.APP_NAME)
+        assertEquals("DSH Go", AppStrings.APP_NAME)
+        val id = "io.github.thousandwinds.dshgo"
+        assertTrue(gradle.contains("applicationId = \"$id\""))
+        assertTrue(gradle.contains("if (sideBuild) applicationIdSuffix = sideSuffix"))
+        val shortcuts = File(main, "res/xml/shortcuts.xml").readText()
+        assertEquals(2, Regex("android:targetPackage=\"$id\"").findAll(shortcuts).count())
+        assertTrue(gradle.contains("android:targetPackage=\\\"$id\\\""))
+        assertTrue(gradle.contains("android:targetPackage=\\\"$id\${suffix.get()}\\\""))
         // Launcher entries, Recents and the share sheet all take the application's label.
         for (element in app.children("activity") + app.children("activity-alias")) {
             assertEquals(element.getAttribute("android:name"), "", element.getAttribute("android:label"))
