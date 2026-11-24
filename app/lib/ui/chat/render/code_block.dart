@@ -263,18 +263,17 @@ TextSpan _highlightChunk(
   AppAccent accent,
   ThemeSyntaxColors? syntax,
 ) {
+  if (code.length > _kHighlightMaxChars) return TextSpan(text: code, style: base);
   final key = (code, language, brightness, base, accent, syntax);
   final cached = _chunkSpans.remove(key);
   if (cached != null) return _chunkSpans[key] = cached;
   var span = TextSpan(text: code, style: base);
-  if (code.length <= _kHighlightMaxChars) {
-    try {
-      final result = _hl.highlight(code: code, language: language);
-      final renderer = TextSpanRenderer(base, dshHighlightTheme(brightness, accent, syntax));
-      result.render(renderer);
-      span = renderer.span ?? span;
-    } catch (_) {}
-  }
+  try {
+    final result = _hl.highlight(code: code, language: language);
+    final renderer = TextSpanRenderer(base, dshHighlightTheme(brightness, accent, syntax));
+    result.render(renderer);
+    span = renderer.span ?? span;
+  } catch (_) {}
   _chunkSpans[key] = span;
   if (_chunkSpans.length > 64) _chunkSpans.remove(_chunkSpans.keys.first);
   return span;
@@ -287,6 +286,12 @@ TextSpan _highlightChunk(
 /// 满 400 行还没找到就硬切。
 @visibleForTesting
 List<String> codeChunks(String code) {
+  var startOfLine = 0;
+  for (var line = 0; line < 200; line++) {
+    final end = code.indexOf('\n', startOfLine);
+    if (end < 0 || end + 1 == code.length) return [code];
+    startOfLine = end + 1;
+  }
   final lines = <String>[];
   for (var at = 0; at < code.length;) {
     final end = code.indexOf('\n', at);
@@ -294,7 +299,6 @@ List<String> codeChunks(String code) {
     lines.add(code.substring(at, next));
     at = next;
   }
-  if (lines.length <= 200) return [code];
   final topLevel = RegExp(r'^[A-Za-z0-9_]');
   final chunks = <String>[];
   var start = 0;
@@ -457,6 +461,7 @@ class _CodeBlockState extends State<CodeBlock> {
     final baseStyle = widget.dense ? AppType.monoSmall(color: dsh.codeWellFg) : AppType.mono(color: dsh.codeWellFg);
     final style = themeStyle.pack == null ? baseStyle : themeStyle.codeTextStyle(baseStyle);
 
+    final diff = !widget.showLineNumbers && normalizedLanguage(widget.language) == 'diff';
     final previous = _cachedCode;
     final sameLook =
         _span != null &&
@@ -467,7 +472,13 @@ class _CodeBlockState extends State<CodeBlock> {
         _cachedDense == widget.dense &&
         _cachedFontFamily == style.fontFamily &&
         _cachedFontSize == style.fontSize;
-    if (!sameLook || previous != code) {
+    if (diff) {
+      // Diff rows paint their own colours; discard any previous highlighted text.
+      _span = _shown = null;
+      _cachedCode = null;
+      _cooldown?.cancel();
+      _cooldown = null;
+    } else if (!sameLook || previous != code) {
       final grows = sameLook && previous != null && code.length > previous.length && code.startsWith(previous);
       if (grows && _cooldown != null) {
         _shown = TextSpan(
@@ -478,7 +489,14 @@ class _CodeBlockState extends State<CodeBlock> {
           ],
         );
       } else {
+        final old = grows ? _span : null;
         _span = _shown = highlightCode(code, widget.language, brightness, style: style, accent: accent, syntax: syntax);
+        // Code that grew replaced its cached prefix: the old span itself (one chunk) or its
+        // last chunk (several). Drop that from the global cache unless the new span reuses it.
+        for (final stale in [?old, ?old?.children?.lastOrNull]) {
+          if (identical(stale, _span) || (_span!.children?.any((c) => identical(c, stale)) ?? false)) continue;
+          _chunkSpans.removeWhere((_, span) => identical(span, stale));
+        }
         _cachedCode = code;
         _cachedLanguage = widget.language;
         _cachedBrightness = brightness;
@@ -496,7 +514,6 @@ class _CodeBlockState extends State<CodeBlock> {
       _shown = _span;
     }
 
-    final diff = !widget.showLineNumbers && normalizedLanguage(widget.language) == 'diff';
     Widget body;
     if (diff) {
       body = _DiffLines(code: code, style: style, wrap: _wrap);

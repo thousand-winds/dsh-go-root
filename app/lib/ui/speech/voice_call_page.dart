@@ -122,6 +122,27 @@ class _VoiceCallPageState extends ConsumerState<VoiceCallPage> with WidgetsBindi
   /// and the page comes in without its staggered rise.
   bool _still = false;
 
+  /// What [build] shows of the call. Not the audio levels: the light reads those
+  /// itself each frame, so they alone (some 25 updates a second) leave the page as it is.
+  Object _shows() => (
+    _call.phase,
+    _call.ended,
+    _call.muted,
+    _call.speaker,
+    _call.heard,
+    _call.caption,
+    _call.error,
+    _call.turns.isEmpty,
+    _call.ended == CallEnd.noRecognizer && ref.read(accountProvider).signedIn,
+    switch (widget.conversation) {
+      final ChatCallConversation chat => chat.sessionId,
+      _ => null,
+    },
+  );
+
+  /// [_shows] as of the last build.
+  Object? _built;
+
   @override
   void initState() {
     super.initState();
@@ -258,6 +279,11 @@ class _VoiceCallPageState extends ConsumerState<VoiceCallPage> with WidgetsBindi
       _callConnect = null;
       _callSession?.call(why == CallEnd.failed ? UsageOutcome.failed : UsageOutcome.ready);
       _callSession = null;
+      // The captions' recognizer (its models) goes with the call, not with the
+      // page: in the background the page only leaves once the app is back.
+      final live = _live;
+      _live = null;
+      unawaited(live?.stop());
     }
     if (phase != _shown) {
       _arrived(phase);
@@ -279,7 +305,7 @@ class _VoiceCallPageState extends ConsumerState<VoiceCallPage> with WidgetsBindi
         },
       );
     }
-    setState(() {});
+    if (_shows() != _built) setState(() {});
   }
 
   /// A new phase: a touch under the finger, and her mood when she is there.
@@ -422,10 +448,7 @@ class _VoiceCallPageState extends ConsumerState<VoiceCallPage> with WidgetsBindi
   /// [child] coming in with the page: a fade and a short rise, starting at [from] (0–1).
   Widget _rise(double from, Widget child, {double distance = 18}) {
     if (_still) return child;
-    final curve = CurvedAnimation(
-      parent: _enter,
-      curve: Interval(from, math.min(1, from + 0.5), curve: Curves.easeOutCubic),
-    );
+    final curve = _enter.drive(CurveTween(curve: Interval(from, math.min(1, from + 0.5), curve: Curves.easeOutCubic)));
     return AnimatedBuilder(
       animation: curve,
       builder: (context, child) => Opacity(
@@ -483,6 +506,7 @@ class _VoiceCallPageState extends ConsumerState<VoiceCallPage> with WidgetsBindi
 
   @override
   Widget build(BuildContext context) {
+    _built = _shows();
     final l10n = context.l10n;
     final theme = Theme.of(context);
     _still = AppMotion.reduced(context);

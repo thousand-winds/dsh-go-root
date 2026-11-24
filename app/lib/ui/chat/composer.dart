@@ -23,6 +23,7 @@ import '../theme/app_icons.dart';
 import '../theme/theme.dart';
 import 'voice/voice_controller.dart';
 import 'voice/voice_widgets.dart';
+import 'widgets/quote_chip.dart' show ClosingTrayChild;
 
 /// The editor's line height, as a multiple of its font size.
 const _lineHeight = 1.45;
@@ -184,7 +185,7 @@ class _ComposerState extends State<Composer> with SingleTickerProviderStateMixin
   late final _draftEmpty = ValueNotifier(widget.controller.text.trim().isEmpty);
 
   void _draftChanged() {
-    _draftEmpty.value = widget.controller.text.trim().isEmpty;
+    _draftEmpty.value = widget.controller.text.trimLeft().isEmpty;
   }
 
   // One value for everything that moves when the composer opens: the corners, the text's
@@ -234,9 +235,6 @@ class _ComposerState extends State<Composer> with SingleTickerProviderStateMixin
     super.didChangeDependencies();
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncOpen());
   }
-
-  /// The last tray shown: it stays while the tray folds away.
-  late Widget? _tray = widget.tray;
 
   void _send() {
     if (!widget.connected || !widget.sessionReady || widget.busy) return;
@@ -318,7 +316,6 @@ class _ComposerState extends State<Composer> with SingleTickerProviderStateMixin
         oldWidget.stopping != widget.stopping) {
       _lastEscape = null;
     }
-    _tray = widget.tray ?? _tray;
     if (oldWidget.focusNode != widget.focusNode) {
       oldWidget.focusNode?.removeListener(_focusChanged);
       widget.focusNode?.addListener(_focusChanged);
@@ -585,7 +582,10 @@ class _ComposerState extends State<Composer> with SingleTickerProviderStateMixin
                   ),
                 ExpandReveal(
                   open: widget.tray != null,
-                  child: Padding(padding: const EdgeInsets.fromLTRB(_keyGap, 2, _keyGap, _keyGap), child: _tray),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(_keyGap, 2, _keyGap, _keyGap),
+                    child: ClosingTrayChild(widget.tray),
+                  ),
                 ),
                 // A new line grows the glass instead of popping it: anchored
                 // at the bottom, where the caret and the keys stay put.
