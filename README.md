@@ -7,11 +7,11 @@
 当前同步到上游 `main` 的这一版：
 
 - 仓库：https://github.com/ccch1mneyyy/dsh-Go
-- 提交：[`89095085bc6243cbd10f557bf6b12f15997aed93`](https://github.com/ccch1mneyyy/dsh-Go/commit/89095085bc6243cbd10f557bf6b12f15997aed93)
-- 说明：Merge pull request #2102 from ccch1mneyyy/fix/tawcroot-compat
+- 提交：[`3b9fbbbb5953ad1afc383ddec16bd63bc02c3442`](https://github.com/ccch1mneyyy/dsh-Go/commit/3b9fbbbb5953ad1afc383ddec16bd63bc02c3442)
+- 说明：release: 1.4.1
 - 日期：2026-11-27
 
-最新稳定发布仍是 [v1.4.0](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.4.0)，对应 [`5bb72e26e745327db20b52aa6c0cbd87f9c6b536`](https://github.com/ccch1mneyyy/dsh-Go/commit/5bb72e26e745327db20b52aa6c0cbd87f9c6b536)（2026-11-25）。官方 `main` 已经走到上面的提交，比这个发布超前 38 个提交。这次同步是上次同步点 [`5ebbfd71272eeac564678bbf745177ea1c330c2d`](https://github.com/ccch1mneyyy/dsh-Go/commit/5ebbfd71272eeac564678bbf745177ea1c330c2d) 之后的 32 个官方 main 提交，也都在官方 v1.4.0 之后。本仓库应用版本名跟随上游，仍是 1.4.0。
+最新稳定发布是 [v1.4.1](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.4.1)，对应 [`3b9fbbbb5953ad1afc383ddec16bd63bc02c3442`](https://github.com/ccch1mneyyy/dsh-Go/commit/3b9fbbbb5953ad1afc383ddec16bd63bc02c3442)（2026-11-27）。官方 `main` 与这次发布是同一提交。这次同步是上次同步点 [`89095085bc6243cbd10f557bf6b12f15997aed93`](https://github.com/ccch1mneyyy/dsh-Go/commit/89095085bc6243cbd10f557bf6b12f15997aed93) 之后的 1 个官方 main 提交，也就是官方 1.4.1 的版本号与更新日志。本仓库应用版本名跟随上游，现在是 1.4.1。
 
 此前导入过的 [`efa70c152128dfdc03e17441f3b4848ed41fbffe`](https://github.com/ccch1mneyyy/dsh-Go/commit/efa70c152128dfdc03e17441f3b4848ed41fbffe) 已不在上游当前 `main` 历史上。这次同步以现在的上游 `main` 为准。
 
@@ -41,6 +41,6 @@
 
 This repository is a personal derivative of [ccch1mneyyy/dsh-Go](https://github.com/ccch1mneyyy/dsh-Go). It is not an official DSH Go build and is not affiliated with the upstream project.
 
-Synced upstream `main`: [`89095085bc6243cbd10f557bf6b12f15997aed93`](https://github.com/ccch1mneyyy/dsh-Go/commit/89095085bc6243cbd10f557bf6b12f15997aed93) (Merge pull request #2102, 2026-11-27). Official's latest GitHub Release is still [v1.4.0](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.4.0) at [`5bb72e26e745327db20b52aa6c0cbd87f9c6b536`](https://github.com/ccch1mneyyy/dsh-Go/commit/5bb72e26e745327db20b52aa6c0cbd87f9c6b536) (2026-11-25); main is 38 commits past that release. This sync is the 32 official main commits after [`5ebbfd71272eeac564678bbf745177ea1c330c2d`](https://github.com/ccch1mneyyy/dsh-Go/commit/5ebbfd71272eeac564678bbf745177ea1c330c2d), all of them after official v1.4.0. The app version name here tracks upstream and remains 1.4.0. `LICENSE` and `THIRD_PARTY_NOTICES.md` from upstream are kept. Modifications here are also under AGPL-3.0.
+Synced upstream `main`: [`3b9fbbbb5953ad1afc383ddec16bd63bc02c3442`](https://github.com/ccch1mneyyy/dsh-Go/commit/3b9fbbbb5953ad1afc383ddec16bd63bc02c3442) (release: 1.4.1, 2026-11-27). Official's latest GitHub Release is now [v1.4.1](https://github.com/ccch1mneyyy/dsh-Go/releases/tag/v1.4.1) at [`3b9fbbbb5953ad1afc383ddec16bd63bc02c3442`](https://github.com/ccch1mneyyy/dsh-Go/commit/3b9fbbbb5953ad1afc383ddec16bd63bc02c3442) (2026-11-27); main is that release commit. This sync is the 1 official main commit after [`89095085bc6243cbd10f557bf6b12f15997aed93`](https://github.com/ccch1mneyyy/dsh-Go/commit/89095085bc6243cbd10f557bf6b12f15997aed93), the official 1.4.1 release bump. The app version name here tracks upstream and is now 1.4.1. `LICENSE` and `THIRD_PARTY_NOTICES.md` from upstream are kept. Modifications here are also under AGPL-3.0.
 
 `applicationId` is `io.github.thousandwinds.dshgo`. The Kotlin namespace stays `io.github.ccch1mneyyy.dsh_app`. APKs are fork-signed with the same key as this repository’s earlier releases, so a newer build can replace an older install of this package. Official in-app updates do not apply. Download APKs from this repository’s [GitHub Releases](https://github.com/thousand-winds/dsh-go-root/releases). KernelSU Root Android Shell is opt-in, requires UID 0, has a Root-only “始终免确认” switch, and reconnects only after Root was already enabled. It does not persist a temporary root.
