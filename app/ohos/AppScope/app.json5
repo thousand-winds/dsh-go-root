@@ -17,6 +17,10 @@
       {
         "name": "ink",
         "icon": "$media:icon_ink"
+      },
+      {
+        "name": "whale",
+        "icon": "$media:icon_whale"
       }
     ],
     "label": "$string:app_name",

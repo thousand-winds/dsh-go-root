@@ -39096,6 +39096,12 @@ abstract class L10n {
   /// **'墨'**
   String get stateIconInk;
 
+  /// No description provided for @stateIconWhale.
+  ///
+  /// In zh, this message translates to:
+  /// **'白鲸'**
+  String get stateIconWhale;
+
   /// No description provided for @stateAppDisclaimer.
   ///
   /// In zh, this message translates to:

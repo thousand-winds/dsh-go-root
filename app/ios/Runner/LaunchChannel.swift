@@ -24,6 +24,7 @@ final class LaunchChannel {
     "AppIconNight": "LaunchIconNight",
     "AppIconFrost": "LaunchIconFrost",
     "AppIconInk": "LaunchIconInk",
+    "AppIconWhale": "LaunchIconWhale",
   ]
 
   private let channel: FlutterMethodChannel

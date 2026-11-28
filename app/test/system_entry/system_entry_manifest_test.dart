@@ -55,7 +55,7 @@ void main() {
 
   test('the launcher entries are the aliases, each with the long-press shortcuts', () {
     final aliases = _aliases();
-    expect(aliases, hasLength(5));
+    expect(aliases, hasLength(6));
     for (final alias in aliases) {
       expect(alias, contains('android:targetActivity=".MainActivity"'));
       expect(alias, contains('android:exported="true"'));
@@ -71,7 +71,7 @@ void main() {
     }
     // Exactly one is on for a fresh install.
     expect(aliases.where((a) => a.contains('android:enabled="true"')), hasLength(1));
-    expect(aliases.where((a) => a.contains('android:enabled="false"')), hasLength(4));
+    expect(aliases.where((a) => a.contains('android:enabled="false"')), hasLength(5));
   });
 
   test('no activity is a launcher entry of its own', () {

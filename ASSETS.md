@@ -7,6 +7,7 @@ DSH Go 的源码以 AGPL-3.0 发布（见 [LICENSE](LICENSE)），但下面这�
 | 素材 | 位置 | 来源 |
 |---|---|---|
 | DSH Go 品牌标识（鱼尾与气泡） | `app/assets/brand/`；由它生成的 `app/lib/ui/shell/brand_glyph.g.dart`、启动图标 `app/android/app/src/main/res/mipmap-*/`、`drawable/ic_launcher_*`，鸿蒙的 `app/ohos/AppScope/resources/base/media/`、`app/ohos/entry/src/main/resources/base/media/`（`tooling/ohos/make-launcher-icons.py`） | DSH Go 自己的品牌图形 |
+| 白鲸桌面图标（第五款预设） | 源图 `app/assets/brand/app-icon-whale.png`；由它生成的 `app/android/app/src/main/res/mipmap-*/ic_launcher_whale*`、`drawable/ic_launcher_whale_background.xml`，iOS 的 `AppIconWhale` 与 `LaunchIconWhale`，鸿蒙的 `whale_background.png` / `whale_foreground.png` / `icon_whale.json`，以及 `app/lib/ui/settings/appearance/whale_glyph.g.dart` 和三个平台的缩放图（`app/tool/make_launcher_icon_whale.py`） | 本仓库维护者自己的图案 |
 | Deepy 小鲸鱼（像素鲸鱼桌宠） | 源文件 `app/tool/pet_src/deepy-whale/`；宠物包 `app/assets/pets/deepy-whale/` | DSH-TUI 的吉祥物。源文件按 [Clawd on Desk](https://github.com/rullerzhou-afk/clawd-on-desk) 的主题包格式制作，只沿用了它的格式 |
 | 小粉鱼（半身桌宠） | 原图与构建脚本 `app/tool/pet_src/pink-fish/`；宠物包 `app/assets/pets/pink-fish/` | ccch1mneyyy 用 AI 生成的原创形象；动画帧由 GPT 生图在原图上逐帧绘制 |
 | 鲸娘（像素鲸鱼娘表情） | 源文件 `app/tool/pet_src/whale-girl/`（`index.html` 是 https://dshtui.com/pets/whale-girl-emoji/ 原页面，里面有事件对应关系和逐帧时长）；宠物包 `app/assets/pets/whale-girl/`；求 Star 弹窗的贴纸 `app/assets/star/star_whale.webp` | DSH-TUI 的吉祥物，最初发布在 dshtui.com |
@@ -19,7 +20,7 @@ go.dshtui.com 首页（`site/home/`）由社区开发者 ClayGao233 / 采云师�
 
 仓库首页 README 用到的展示素材 `docs/assets/`（首图、社交预览图、桌宠动图、社群二维码）同样适用本页的条件：可以随本仓库一起查看和转载介绍，不要用在你自己发布的产品上。
 
-宠物包由 `app/tool/make_pet_pack.py` 从 `app/tool/pet_src/` 生成，品牌图形的代码由 `app/tool/make_brand_mark.py` 从 `app/assets/brand/` 生成。工具脚本本身和其他源码一样，以 AGPL-3.0 发布。
+宠物包由 `app/tool/make_pet_pack.py` 从 `app/tool/pet_src/` 生成，品牌图形的代码由 `app/tool/make_brand_mark.py` 从 `app/assets/brand/` 生成；白鲸那一款由 `app/tool/make_launcher_icon_whale.py` 从同一目录的源图生成。工具脚本本身和其他源码一样，以 AGPL-3.0 发布。
 
 伙伴小屋的 Live2D 素材不在这个仓库和 APK 里：Cubism Core（Live2D 专有许可）、Cubism Web Framework（Live2D Open Software License）和角色模型都打成单独的素材包，用时才放进手机，见 [docs/design/companion.md](docs/design/companion.md)。模型的作者和授权写在素材包的 `character.json` 里，App 菜单底部原样显示。
 

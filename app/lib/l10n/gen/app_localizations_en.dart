@@ -22443,6 +22443,9 @@ class L10nEn extends L10n {
   String get stateIconInk => 'Ink';
 
   @override
+  String get stateIconWhale => 'Whale';
+
+  @override
   String get stateAppDisclaimer => 'Built on DeepSeek Harness · Unofficial DeepSeek app';
 
   @override

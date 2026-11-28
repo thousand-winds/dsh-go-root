@@ -2,6 +2,7 @@ package io.github.ccch1mneyyy.dsh_app.icons
 
 import io.github.ccch1mneyyy.dsh_app.icons.LauncherIcons.FROST
 import io.github.ccch1mneyyy.dsh_app.icons.LauncherIcons.INK
+import io.github.ccch1mneyyy.dsh_app.icons.LauncherIcons.WHALE
 import io.github.ccch1mneyyy.dsh_app.icons.LauncherIcons.MIST
 import io.github.ccch1mneyyy.dsh_app.icons.LauncherIcons.MIST_ALT
 import io.github.ccch1mneyyy.dsh_app.icons.LauncherIcons.NIGHT
@@ -395,7 +396,7 @@ class LauncherIconsTest {
     }
 
     @Test fun everyVariantHasExactlyOneAliasBesidesTheOriginal() {
-        assertEquals(listOf(MIST, NIGHT, FROST, INK), LauncherIcons.variants)
+        assertEquals(listOf(MIST, NIGHT, FROST, INK, WHALE), LauncherIcons.variants)
         for (variant in LauncherIcons.variants) {
             assertEquals(1, LauncherIcons.aliases.count { it.variant == variant && it !== ORIGINAL })
         }

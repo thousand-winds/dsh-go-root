@@ -21236,6 +21236,9 @@ class L10nZh extends L10n {
   String get stateIconInk => '墨';
 
   @override
+  String get stateIconWhale => '白鲸';
+
+  @override
   String get stateAppDisclaimer => '基于 DeepSeek Harness 构建 · 非 DeepSeek 官方应用';
 
   @override

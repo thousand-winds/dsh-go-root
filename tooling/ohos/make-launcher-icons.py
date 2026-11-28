@@ -29,6 +29,8 @@ ALTERNATE_ICONS = {
     'night': ('glyph-dark.svg', None),
     'frost': ('glyph-light.svg', None),
     'ink': ('glyph-mono.svg', '#F5F7FB'),
+    # 白鲸's master is a picture, not one of the brand's SVG masters: its layers come from
+    # app/tool/make_launcher_icon_whale.py.
 }
 
 

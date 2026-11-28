@@ -1,4 +1,4 @@
-// 桌面图标: which of the four launcher icons the phone shows. Native side:
+// 桌面图标: which launcher icon the phone shows. Native side:
 // android/.../icons/ (LauncherIconPlugin, LauncherIcons; MethodChannel
 // `dsh/launcher_icon`), one <activity-alias> per icon; on HarmonyOS
 // ohos/.../LauncherIconPlugin.ets, the system's alternate icons.
@@ -15,13 +15,15 @@ enum AppIcon {
   mist,
   night,
   frost,
-  ink;
+  ink,
+  whale;
 
   String get label => switch (this) {
     mist => appL10n.stateIconMist,
     night => appL10n.stateIconNight,
     frost => appL10n.stateIconFrost,
     ink => appL10n.stateIconInk,
+    whale => appL10n.stateIconWhale,
   };
 
   static AppIcon? byId(Object? id) {

@@ -293,7 +293,9 @@ private final class ShortcutsChannel {
 /// rounded square is close enough to iOS's.
 private final class LauncherIconChannel {
   private static let primary = "mist"
-  private static let alternates = ["night": "AppIconNight", "frost": "AppIconFrost", "ink": "AppIconInk"]
+  private static let alternates = [
+    "night": "AppIconNight", "frost": "AppIconFrost", "ink": "AppIconInk", "whale": "AppIconWhale",
+  ]
 
   private let channel: FlutterMethodChannel
 

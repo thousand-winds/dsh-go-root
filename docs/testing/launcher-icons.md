@@ -34,7 +34,7 @@ probe --es cmd set --es id mist
 adb root
 adb wait-for-device
 adb shell am force-stop "$pkg"
-for alias in LauncherMist LauncherMistAlt LauncherNight LauncherFrost LauncherInk; do
+for alias in LauncherMist LauncherMistAlt LauncherNight LauncherFrost LauncherInk LauncherWhale; do
   adb shell pm default-state --user 0 "$pkg/.$alias"
 done
 adb shell am start -n "$pkg/.LauncherMist"
